@@ -6,7 +6,10 @@ import { rerender } from './render-queue';
 import options from './options';
 
 export default {
+	// h(): jsx literal -> VNode (VNode.js)
+	// class VNode: POJO to hold nodeName / attr / children
 	h,
+	// duplicate a VNode
 	cloneElement,
 	Component,
 	render,
