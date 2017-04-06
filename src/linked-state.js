@@ -10,10 +10,15 @@ import { isString, delve } from './util';
 export function createLinkedState(component, key, eventPath) {
 	let path = key.split('.');
 	return function(e) {
+    // t for target? event.target or this (XXX: what is 'this'? how is events attached to DOM?) (XXX: in what case the event dont have a target?)
 		let t = e && e.target || this,
 			state = {},
 			obj = state,
-			v = isString(eventPath) ? delve(e, eventPath) : t.nodeName ? (t.type.match(/^che|rad/) ? t.checked : t.value) : e,
+      // "value" of event
+      // if eventPath exists, use the path to extract value from Event
+      // else if t has nodeName (can we assume it's a <input> ?), use value from (t.checked or t.value)
+      // else just the event itself (XXX: ???)
+			v = isString(eventPath) ? delve(e, eventPath) : ( t.nodeName ? (t.type.match(/^che|rad/) ? t.checked : t.value) : e ),
 			i = 0;
 		for ( ; i<path.length-1; i++) {
 			obj = obj[path[i]] || (obj[path[i]] = !i && component.state[path[i]] || {});

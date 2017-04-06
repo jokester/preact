@@ -5,6 +5,7 @@ import { diff } from './vdom/diff';
  *	@param {Element} parent		DOM element to render into
  *	@param {Element} [merge]	Attempt to re-use an existing DOM tree rooted at `merge`
  *	@public
+ *	@return XXX: what?
  *
  *	@example
  *	// render a div into <body>:

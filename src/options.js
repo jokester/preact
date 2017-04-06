@@ -3,6 +3,9 @@
  *	@namespace options {Object}
  */
 export default {
+  // the function used to "queue" reendering
+  // when not
+  // debounceRendering(rerender: Function),
 
 	/** If `true`, `prop` changes trigger synchronous component updates.
 	 *	@name syncComponentUpdates

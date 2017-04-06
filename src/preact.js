@@ -9,11 +9,13 @@ export default {
 	// h(): jsx literal -> VNode (VNode.js)
 	// class VNode: POJO to hold nodeName / attr / children
 	h,
-	// duplicate a VNode
+	// shallow copy a VNode
 	cloneElement,
+  // base class for Component
 	Component,
 	render,
 	rerender,
+  // global options singleton
 	options
 };
 

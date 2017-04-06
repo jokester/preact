@@ -21,5 +21,6 @@ export function isFunctionalComponent(vnode) {
  *	@private
  */
 export function buildFunctionalComponent(vnode, context) {
+  // just call the function with props, it is supposed to return another VNode
 	return vnode.nodeName(getNodeProps(vnode), context || EMPTY);
 }

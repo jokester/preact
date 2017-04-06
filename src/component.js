@@ -4,6 +4,22 @@ import { createLinkedState } from './linked-state';
 import { renderComponent } from './vdom/component';
 import { enqueueRender } from './render-queue';
 
+/**
+ * Baseclass for Component
+ *
+ * methods:
+ *
+ * - linkState: create event handler function that call setState() with value extracted from event
+ * - setState
+ * - forceUpdate
+ * - render (abstract)
+ *
+ * "phantom" methods that are not defined here:
+ * - lifecycle callback
+ *
+ *
+ */
+
 /** Base Component class, for the ES6 Class method of creating Components
  *	@public
  *
@@ -41,6 +57,7 @@ extend(Component.prototype, {
 	 *	@function
 	 */
 	// shouldComponentUpdate() {
+  // XXX: how is this implemented?
 	// 	return true;
 	// },
 
@@ -75,9 +92,13 @@ extend(Component.prototype, {
 	 */
 	setState(state, callback) {
 		let s = this.state;
+    // shallow copy this.state to this.prevState
 		if (!this.prevState) this.prevState = clone(s);
+    // modify this.state
 		extend(s, isFunction(state) ? state(s, this.props) : state);
+    // add callback to renderCallbacks
 		if (callback) (this._renderCallbacks = (this._renderCallbacks || [])).push(callback);
+    // enqueue "component to render"
 		enqueueRender(this);
 	},
 

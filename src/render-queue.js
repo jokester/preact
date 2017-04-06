@@ -6,6 +6,13 @@ import { renderComponent } from './vdom/component';
 
 let items = [];
 
+/**
+ * insert component to {@link items}
+ *
+ * Points:
+ *  Component that is already _dirty will not be inserted again
+ *  Array#push() returns new length of the array. this ensures rerender() is queued only once.
+ */
 export function enqueueRender(component) {
 	if (!component._dirty && (component._dirty = true) && items.push(component)==1) {
 		(options.debounceRendering || defer)(rerender);
@@ -13,6 +20,9 @@ export function enqueueRender(component) {
 }
 
 
+/**
+ * render dirty components in turn, and clean render queue.
+ */
 export function rerender() {
 	let p, list = items;
 	items = [];

@@ -32,8 +32,12 @@ export function flushMounts() {
 
 
 /** Apply differences in a given vnode (and it's deep children) to a real DOM Node.
- *	@param {Element} [dom=null]		A DOM node to mutate into the shape of the `vnode`
+ *	@param {Element} [dom=null]		A DOM node to mutate into the shape of the `vnode` XXX: what if it's falsy?
  *	@param {VNode} vnode			A VNode (with descendants forming a tree) representing the desired DOM structure
+ *	@param {XXX: ???} context
+ *	@param {XXX: ???} mountAll
+ *	@param {Element} parent the new parent to insert dom into
+ *	@param {XXX: ???} componentRoot
  *	@returns {Element} dom			The created/mutated element
  *	@private
  */
@@ -41,15 +45,20 @@ export function diff(dom, vnode, context, mountAll, parent, componentRoot) {
 	// diffLevel having been 0 here indicates initial entry into the diff (not a subdiff)
 	if (!diffLevel++) {
 		// when first starting the diff, check if we're diffing an SVG or within an SVG
+    // XXX: when we get deeper, isSvgMode will be updated within idiff
 		isSvgMode = parent && typeof parent.ownerSVGElement!=='undefined';
 
-		// hydration is inidicated by the existing element to be diffed not having a prop cache
+		// hydration is indicated by the existing element to be diffed not having a prop cache
+    // "水合"
+    // XXX: what is a "prop cache?"
 		hydrating = dom && !(ATTR_KEY in dom);
 	}
 
 	let ret = idiff(dom, vnode, context, mountAll);
 
 	// append the element if its a new parent
+  // XXX: a new child? did developit meant "needs a new parent"?
+  // XXX: what does idiff return?
 	if (parent && ret.parentNode!==parent) parent.appendChild(ret);
 
 	// diffLevel being reduced to 0 means we're exiting the diff
@@ -62,7 +71,11 @@ export function diff(dom, vnode, context, mountAll, parent, componentRoot) {
 	return ret;
 }
 
-
+/**
+ *
+ *	@param {Element} dom			The 'base' element to mutate
+ *	@returns {Element} created/mutated element
+ */
 function idiff(dom, vnode, context, mountAll) {
 	let ref = vnode && vnode.attributes && vnode.attributes.ref;
 
@@ -101,6 +114,7 @@ function idiff(dom, vnode, context, mountAll) {
 	}
 
 
+  // if we are here: vnode is a DOM component, perform DOMcomponent diff
 	let out = dom,
 		nodeName = String(vnode.nodeName),	// @TODO this masks undefined component errors as `<undefined>`
 		prevSvgMode = isSvgMode,
@@ -109,6 +123,7 @@ function idiff(dom, vnode, context, mountAll) {
 
 	// SVGs have special namespace stuff.
 	// This tracks entering and exiting that namespace when descending through the tree.
+  // <svg> ----isSvgMode = true ---- <foreignObject> --- isSvgMode = false ---- </foreignObject>
 	isSvgMode = nodeName==='svg' ? true : nodeName==='foreignObject' ? false : isSvgMode;
 
 
@@ -130,9 +145,9 @@ function idiff(dom, vnode, context, mountAll) {
 		// if the previous Element was mounted into the DOM, replace it inline
 		if (dom.parentNode) dom.parentNode.replaceChild(out, dom);
 
-		// recycle the old element (skips non-Element node types)
+		// recycle the old element (skips non-Element node types) (_component gets recycled too)
 		recollectNodeTree(dom);
-	}
+	} /* else: just reuse out=dom */
 
 
 	let fc = out.firstChild,
@@ -142,6 +157,7 @@ function idiff(dom, vnode, context, mountAll) {
 	// ...create it and populate it with the element's attributes.
 	if (!props) {
 		out[ATTR_KEY] = props = {};
+    // Element.attributes is an array of attribute nodes like {name: "class", value: "sss"}
 		for (let a=out.attributes, i=a.length; i--; ) props[a[i].name] = a[i].value;
 	}
 
@@ -151,7 +167,7 @@ function idiff(dom, vnode, context, mountAll) {
 			fc.nodeValue = vchildren[0];
 		}
 	}
-	// otherwise, if there are existing or new children, diff them:
+	// otherwise, if there are existing or new children (i.e either vnode or node had children), diff them:
 	else if (vchildren && vchildren.length || fc) {
 		innerDiffNode(out, vchildren, context, mountAll, !!props.dangerouslySetInnerHTML);
 	}
@@ -269,8 +285,8 @@ function innerDiffNode(dom, vchildren, context, mountAll, absorb) {
 
 
 /** Recursively recycle (or just unmount) a node an its descendants.
- *	@param {Node} node						DOM node to start unmount/removal from
- *	@param {Boolean} [unmountOnly=false]	If `true`, only triggers unmount lifecycle, skips removal
+ *	@param {Node} node						DOM node to start unmount/removal from FIXME: why not Element?
+ *	@param {Boolean} [unmountOnly=false]	If `true`, only triggers unmount lifecycle, skips removal from DOM tree
  */
 export function recollectNodeTree(node, unmountOnly) {
 	let component = node._component;
@@ -300,7 +316,7 @@ export function recollectNodeTree(node, unmountOnly) {
 /** Apply differences in attributes from a VNode to the given DOM Element.
  *	@param {Element} dom		Element with attributes to diff `attrs` against
  *	@param {Object} attrs		The desired end-state key-value attribute pairs
- *	@param {Object} old			Current/previous attributes (from previous VNode or element's prop cache)
+ *	@param {Object} old			Current/previous attributes (from previous VNode or element's prop cache) (XXX: in what case from previous VNode?)
  */
 function diffAttributes(dom, attrs, old) {
 	// remove attributes no longer present on the vnode by setting them to undefined
