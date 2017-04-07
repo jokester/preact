@@ -156,6 +156,7 @@ function idiff(dom, vnode, context, mountAll) {
 	// Attribute Hydration: if there is no prop cache on the element,
 	// ...create it and populate it with the element's attributes.
 	if (!props) {
+    // out.attributes ->  out[ATTR_KEY}
 		out[ATTR_KEY] = props = {};
     // Element.attributes is an array of attribute nodes like {name: "class", value: "sss"}
 		for (let a=out.attributes, i=a.length; i--; ) props[a[i].name] = a[i].value;
@@ -316,7 +317,9 @@ export function recollectNodeTree(node, unmountOnly) {
 /** Apply differences in attributes from a VNode to the given DOM Element.
  *	@param {Element} dom		Element with attributes to diff `attrs` against
  *	@param {Object} attrs		The desired end-state key-value attribute pairs
- *	@param {Object} old			Current/previous attributes (from previous VNode or element's prop cache) (XXX: in what case from previous VNode?)
+ *	@param {Object} old			Current/previous attributes (from previous VNode or element's prop cache)
+ *	    "current": when old is just created from dom.attributes, in idiff()
+ *	    "previous": when old is not touched by idiff()
  */
 function diffAttributes(dom, attrs, old) {
 	// remove attributes no longer present on the vnode by setting them to undefined
