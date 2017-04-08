@@ -37,6 +37,7 @@ export function setAccessor(node, name, old, value, isSvg) {
 		node.className = value || '';
 	}
 	else if (name==='style') {
+		// style can be a string or a object
 		if (!value || isString(value) || isString(old)) {
 			node.style.cssText = value || '';
 		}
@@ -45,6 +46,8 @@ export function setAccessor(node, name, old, value, isSvg) {
 				for (let i in old) if (!(i in value)) node.style[i] = '';
 			}
 			for (let i in value) {
+				// if value[i] is number and !NON_DIM[i]: add px
+				// else: just use value[i]
 				node.style[i] = typeof value[i]==='number' && !NON_DIMENSION_PROPS[i] ? (value[i]+'px') : value[i];
 			}
 		}
@@ -53,16 +56,20 @@ export function setAccessor(node, name, old, value, isSvg) {
 		if (value) node.innerHTML = value.__html || '';
 	}
 	else if (name[0]=='o' && name[1]=='n') {
+		// event handler
 		let l = node._listeners || (node._listeners = {});
 		name = toLowerCase(name.substring(2));
 		// @TODO: this might be worth it later, un-breaks focus/blur bubbling in IE9:
 		// if (node.attachEvent) name = name=='focus'?'focusin':name=='blur'?'focusout':name;
 		if (value) {
+			// add handler if (value && !l[name])
 			if (!l[name]) node.addEventListener(name, eventProxy, !!NON_BUBBLING_EVENTS[name]);
 		}
 		else if (l[name]) {
+			// remove handler if (!value && l[name])
 			node.removeEventListener(name, eventProxy, !!NON_BUBBLING_EVENTS[name]);
 		}
+		// always update l
 		l[name] = value;
 	}
 	else if (name!=='list' && name!=='type' && !isSvg && name in node) {

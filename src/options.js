@@ -7,6 +7,8 @@ export default {
   // when not
   // debounceRendering(rerender: Function),
 
+  // event(ev: Event): Event // a hook to `transform` event before calling them to handler
+
 	/** If `true`, `prop` changes trigger synchronous component updates.
 	 *	@name syncComponentUpdates
 	 *	@type Boolean

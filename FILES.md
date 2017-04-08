@@ -21,7 +21,7 @@ Files are listed by functionality: VNode / Component
  102 | src/component.js                  | Base component class
   24 | src/linked-state.js               | create "linkedStateHandler", function that call setState() with value extracted from event
 -----+-----------------------------------+------------------------------
-     |                                   | **VDOM ???** / 800 LOC
+     |                                   | **dom / vdom** / 800 LOC
   20 | src/render.js                     | Entrypoint for rendering
   22 | src/render-queue.js               | Queue for dirty elements
   25 | src/vdom/functional-component.js  | Util for Functional Components (detect / expand)

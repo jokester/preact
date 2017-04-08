@@ -114,7 +114,8 @@ function idiff(dom, vnode, context, mountAll) {
 	}
 
 
-  // if we are here: vnode is a DOM component, perform DOMcomponent diff
+  // if we are here: both node and vnode are DOM components
+  // perform DOMcomponent diff
 	let out = dom,
 		nodeName = String(vnode.nodeName),	// @TODO this masks undefined component errors as `<undefined>`
 		prevSvgMode = isSvgMode,
@@ -175,7 +176,7 @@ function idiff(dom, vnode, context, mountAll) {
 
 
 	// Apply attributes/props from VNode to the DOM Element:
-	diffAttributes(out, vnode.attributes, props);
+	diffAttributes(out, /* desired */ vnode.attributes, /* old */props);
 
 
 	// invoke original ref (from before resolving Pure Functional Components):
@@ -324,6 +325,7 @@ export function recollectNodeTree(node, unmountOnly) {
 function diffAttributes(dom, attrs, old) {
 	// remove attributes no longer present on the vnode by setting them to undefined
 	let name;
+	// remove dom[name] if (name in old) && (old[name] != null) && (!name in attrs)
 	for (name in old) {
 		if (!(attrs && name in attrs) && old[name]!=null) {
 			setAccessor(dom, name, old[name], old[name] = undefined, isSvgMode);
@@ -331,10 +333,18 @@ function diffAttributes(dom, attrs, old) {
 	}
 
 	// add new & update changed attributes
+	// set dom[name] to attr[name] if (name in attrs) && ()
 	if (attrs) {
 		for (name in attrs) {
-			if (name!=='children' && name!=='innerHTML' && (!(name in old) || attrs[name]!==(name==='value' || name==='checked' ? dom[name] : old[name]))) {
-				setAccessor(dom, name, old[name], old[name] = attrs[name], isSvgMode);
+			if (name!=='children'		// skip "children"
+				&& name!=='innerHTML'	// skip "innerHTML"
+				&& (!(name in old) 		// not in old
+					|| attrs[name]!== /* in old but different value */
+						// when name is value / checked: compare with dom[name]
+					   (name==='value' || name==='checked' ? dom[name] : old[name])))  {
+
+				setAccessor(/* element */dom, /* name of attr */name, /* prev value*/old[name],
+					/* new value */old[name] = attrs[name], isSvgMode);
 			}
 		}
 	}
