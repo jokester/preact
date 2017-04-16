@@ -13,7 +13,9 @@ export default {
 	cloneElement,
   // base class for Component
 	Component,
+	// top-layer render: diff dom and a element tree
 	render,
+	// render all dirty components
 	rerender,
   // global options singleton
 	options

@@ -76,7 +76,7 @@ export function diff(dom, vnode, context, mountAll, parent, componentRoot) {
  *	@param {Element} dom			The 'base' element to mutate
  *	@returns {Element} created/mutated element
  */
-function idiff(dom, vnode, context, mountAll) {
+function idiff(dom, vnode, /* TODO: what is context? */context, mountAll) {
 	let ref = vnode && vnode.attributes && vnode.attributes.ref;
 
 
@@ -137,6 +137,7 @@ function idiff(dom, vnode, context, mountAll) {
 		// case: Element and VNode had different nodeNames
 		// - need to create the correct Element to match VNode
 		// - then migrate children from old to new
+		// NOTE: render(merge=true) falls to here
 
 		out = createNode(nodeName, isSvgMode);
 
@@ -171,7 +172,8 @@ function idiff(dom, vnode, context, mountAll) {
 	}
 	// otherwise, if there are existing or new children (i.e either vnode or node had children), diff them:
 	else if (vchildren && vchildren.length || fc) {
-		innerDiffNode(out, vchildren, context, mountAll, !!props.dangerouslySetInnerHTML);
+		innerDiffNode(out, vchildren, context, mountAll,
+		 /* absorb */!!props.dangerouslySetInnerHTML);
 	}
 
 
@@ -194,20 +196,21 @@ function idiff(dom, vnode, context, mountAll) {
  *	@param {Element} dom		Element whose children should be compared & mutated
  *	@param {Array} vchildren	Array of VNodes to compare to `dom.childNodes`
  *	@param {Object} context		Implicitly descendant context object (from most recent `getChildContext()`)
- *	@param {Boolean} mountAll
+ *	@param {Boolean} mountAll   TODO: ??
  *	@param {Boolean} absorb		If `true`, consumes externally created elements similar to hydration
  */
 function innerDiffNode(dom, vchildren, context, mountAll, absorb) {
 	let originalChildren = dom.childNodes,
-		children = [],
-		keyed = {},
-		keyedLen = 0,
-		min = 0,
+		children = [] /* non-keyed children */,
+		keyed = {} /* keyed children */,
+		keyedLen = 0/* num of keyed children, indexed by key */,
+		min = 0 /* first non-empty index in non-keyed children */,
 		len = originalChildren.length,
-		childrenLen = 0,
+		childrenLen = 0 /* upper bound of keyed children, indexed with 0, 1, etc */,
 		vlen = vchildren && vchildren.length,
 		j, c, vchild, child;
 
+  // split originalChildren to keyed and children
 	if (len) {
 		for (let i=0; i<len; i++) {
 			let child = originalChildren[i],
@@ -219,7 +222,7 @@ function innerDiffNode(dom, vchildren, context, mountAll, absorb) {
 			}
 			else if (hydrating || absorb || props || child instanceof Text) {
 				children[childrenLen++] = child;
-			}
+			} /* TODO: else -- not touched. In which case is this useful? */
 		}
 	}
 
@@ -258,16 +261,20 @@ function innerDiffNode(dom, vchildren, context, mountAll, absorb) {
 			// morph the matched/found/created DOM child to match vchild (deep)
 			child = idiff(child, vchild, context, mountAll);
 
+			// insert child (for vchildren[i]) at correct index of dom
 			if (child && child!==dom) {
-				if (i>=len) {
+				if (i>=len /* const len = origChildren.length. */) {
 					dom.appendChild(child);
 				}
 				else if (child!==originalChildren[i]) {
 					if (child===originalChildren[i+1]) {
+            // shift originalChildren[i+1] (i.e. child) to originalChildren[i]
 						removeNode(originalChildren[i]);
 					}
+          // make child the new originalChildren[i].
+          // does nothing if child is already originalChildren[i] -> FIXME: we can make this a else?
 					dom.insertBefore(child, originalChildren[i] || null);
-				}
+				} /* else: no need to touch originalChildren[i] */
 			}
 		}
 	}
