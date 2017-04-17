@@ -76,7 +76,7 @@ export function diff(dom, vnode, context, mountAll, parent, componentRoot) {
  *	@param {Element} dom			The 'base' element to mutate
  *	@returns {Element} created/mutated element
  */
-function idiff(dom, vnode, /* TODO: what is context? */context, mountAll) {
+function idiff(dom, vnode, /* TODO: what is context? */context, /*  */mountAll) {
 	let ref = vnode && vnode.attributes && vnode.attributes.ref;
 
 

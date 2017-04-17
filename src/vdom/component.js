@@ -198,16 +198,22 @@ export function renderComponent(component, opts, mountAll, isChild) {
 /** Apply the Component referenced by a VNode to the DOM.
  *	@param {Element} dom	The DOM node to mutate
  *	@param {VNode} vnode	A Component-referencing VNode
+ *  @param {WTF} context
+ *  @param {WTF} mountAll
  *	@returns {Element} dom	The created/mutated element
  *	@private
  */
 export function buildComponentFromVNode(dom, vnode, context, mountAll) {
+	// c: existing component
 	let c = dom && dom._component,
+		// originalC <- dom && dom.
 		originalComponent = c,
 		oldDom = dom,
+		// "direct"?
 		isDirectOwner = c && dom._componentConstructor===vnode.nodeName,
 		isOwner = isDirectOwner,
 		props = getNodeProps(vnode);
+		// 顺着 c = c._parentComponent 向上找，直到 (!c || isOwner)
 	while (c && !isOwner && (c=c._parentComponent)) {
 		isOwner = c.constructor===vnode.nodeName;
 	}
