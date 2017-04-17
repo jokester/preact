@@ -6,7 +6,7 @@ import { Component } from '../component';
  */
 const components = {};
 
-
+// (components[component.name] ||= []) << component
 export function collectComponent(component) {
 	let name = component.constructor.name,
 		list = components[name];
@@ -18,10 +18,13 @@ export function collectComponent(component) {
 export function createComponent(Ctor, props, context) {
 	let inst = new Ctor(props, context),
 		list = components[Ctor.name];
+	// Ctor其实可以不继承Component?
 	Component.call(inst, props, context);
 	if (list) {
 		for (let i=list.length; i--; ) {
 			if (list[i].constructor===Ctor) {
+				// 从list中找到有相同constructor的instance, list[i]
+				// 把list[i]的nextBase移到inst, 从list中删掉list[i]
 				inst.nextBase = list[i].nextBase;
 				list.splice(i, 1);
 				break;

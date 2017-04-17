@@ -16,17 +16,20 @@ import { removeNode } from '../dom/index';
  *	@param {boolean} [opts.renderSync=false]	If `true` and {@link options.syncComponentUpdates} is `true`, triggers synchronous rendering.
  *	@param {boolean} [opts.render=true]			If `false`, no render will be triggered.
  */
-export function setComponentProps(component, props, opts, context, mountAll) {
+export function setComponentProps(component, props, opts, context, /* FIXME: 强制mount? */mountAll) {
 	if (component._disable) return;
 	component._disable = true;
 
+	// 将props.ref  props.key移到component
 	if ((component.__ref = props.ref)) delete props.ref;
 	if ((component.__key = props.key)) delete props.key;
 
 	if (!component.base || mountAll) {
+		// 从未mount到mount的hook
 		if (component.componentWillMount) component.componentWillMount();
 	}
 	else if (component.componentWillReceiveProps) {
+		// 从mounted到mounted的hook
 		component.componentWillReceiveProps(props, context);
 	}
 
@@ -42,13 +45,16 @@ export function setComponentProps(component, props, opts, context, mountAll) {
 
 	if (opts!==NO_RENDER) {
 		if (opts===SYNC_RENDER || options.syncComponentUpdates!==false || !component.base) {
+			// 第一次render一定是同步
 			renderComponent(component, SYNC_RENDER, mountAll);
 		}
 		else {
+			// 将component加入 '脏' 队列
 			enqueueRender(component);
 		}
 	}
 
+	// 如果有__ref: 执行一次__ref(component)    (__ref会被多次执行且时机不定, 应该做成幂等的)
 	if (component.__ref) component.__ref(component);
 }
 
@@ -206,32 +212,39 @@ export function renderComponent(component, opts, mountAll, isChild) {
 export function buildComponentFromVNode(dom, vnode, context, mountAll) {
 	// c: existing component
 	let c = dom && dom._component,
-		// originalC <- dom && dom.
+		// c = originalC = 最内层component
 		originalComponent = c,
 		oldDom = dom,
 		// "direct"?
 		isDirectOwner = c && dom._componentConstructor===vnode.nodeName,
 		isOwner = isDirectOwner,
 		props = getNodeProps(vnode);
-		// 顺着 c = c._parentComponent 向上找，直到 (!c || isOwner)
+		// 顺着 c = c._parentComponent 从内向外找，直到 !c (ie没找到) 或 isOwner (ie找到)
 	while (c && !isOwner && (c=c._parentComponent)) {
 		isOwner = c.constructor===vnode.nodeName;
 	}
 
+	// 如果找到owner c: 把props设置到c
 	if (c && isOwner && (!mountAll || c._component)) {
 		setComponentProps(c, props, ASYNC_RENDER, context, mountAll);
+		// FIXME: 此时c还没有被重新render, 为何可以用c.base ?
 		dom = c.base;
 	}
 	else {
+		// 如果没找到owner: 可能是Component改变了 或根本没有过Component
+		// 在有旧Component时且不是isDirectOwner时, 先unmount旧的Component
 		if (originalComponent && !isDirectOwner) {
 			unmountComponent(originalComponent, true);
 			dom = oldDom = null;
 		}
 
+		// 新建component instance
 		c = createComponent(vnode.nodeName, props, context);
+		// dom为真的条件: 当原dom没有_component, 或isDirectOwner为真时
+		// nextBase为真: ???
 		if (dom && !c.nextBase) {
 			c.nextBase = dom;
-			// passing dom/oldDom as nextBase will recycle it if unused, so bypass recycling on L241:
+			// passing dom/oldDom as nextBase will recycle it if unused, so bypass recycling on L241 /* FIXME: no longer L241 */
 			oldDom = null;
 		}
 		setComponentProps(c, props, SYNC_RENDER, context, mountAll);

@@ -17,5 +17,5 @@ import { diff } from './vdom/diff';
  *	render(<Thing name="one" />, document.querySelector('#foo'));
  */
 export function render(vnode, parent, merge) {
-	return diff(/* dom */merge, vnode, {}, false, parent);
+	return diff(/* dom */merge, vnode, /*context*/{}, /*mountAll*/false, parent);
 }
