@@ -334,6 +334,7 @@ function diffAttributes(dom, attrs, old) {
 	let name;
 	// remove dom[name] if (name in old) && (old[name] != null) && (!name in attrs)
 	for (name in old) {
+		// if (name not in attrs) && (name in old): delete it
 		if (!(attrs && name in attrs) && old[name]!=null) {
 			setAccessor(dom, name, old[name], old[name] = undefined, isSvgMode);
 		}
