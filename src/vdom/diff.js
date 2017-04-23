@@ -108,7 +108,7 @@ function idiff(dom, vnode, /* TODO: what is context? */context, /*  */mountAll) 
 	}
 
 
-	// If the VNode represents a Component, perform a component diff.
+	// If the VNode represents a Component, perform a (dom-component) diff.
 	if (isFunction(vnode.nodeName)) {
 		return buildComponentFromVNode(dom, vnode, context, mountAll);
 	}
@@ -182,6 +182,7 @@ function idiff(dom, vnode, /* TODO: what is context? */context, /*  */mountAll) 
 
 
 	// invoke original ref (from before resolving Pure Functional Components):
+	// FIXME: 有多层PFC时，只有最外层的ref生效吗？
 	if (ref) {
 		(props.ref = ref)(out);
 	}
@@ -296,12 +297,15 @@ function innerDiffNode(dom, vchildren, context, mountAll, absorb) {
 /** Recursively recycle (or just unmount) a node an its descendants.
  *	@param {Node} node						DOM node to start unmount/removal from FIXME: why not Element?
  *	@param {Boolean} [unmountOnly=false]	If `true`, only triggers unmount lifecycle, skips removal from DOM tree
+ *  unmountOnly在以下两种情况为true:
+ *    1. 被recollectNodeTree递归调用，且上一次也为true
+ *    2. 被unmountComponent调用，且unmountComponent的remove为false
  */
 export function recollectNodeTree(node, unmountOnly) {
 	let component = node._component;
 	if (component) {
 		// if node is owned by a Component, unmount that component (ends up recursing back here)
-		unmountComponent(component, !unmountOnly);
+		unmountComponent(component, !unmountOnly /* === "remove" in unmountComponent */);
 	}
 	else {
 		// If the node's VNode had a ref function, invoke it with null here.

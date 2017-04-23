@@ -7,6 +7,7 @@ import { Component } from '../component';
 const components = {};
 
 // (components[component.name] ||= []) << component
+// only called from unmountComponent(remove = true)
 export function collectComponent(component) {
 	let name = component.constructor.name,
 		list = components[name];
@@ -25,6 +26,7 @@ export function createComponent(Ctor, props, context) {
 			if (list[i].constructor===Ctor) {
 				// 从list中找到有相同constructor的instance, list[i]
 				// 把list[i]的nextBase移到inst, 从list中删掉list[i]
+				// i.e. 复用旧instance的dom，不复用旧instance本身
 				inst.nextBase = list[i].nextBase;
 				list.splice(i, 1);
 				break;

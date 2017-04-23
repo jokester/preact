@@ -38,6 +38,7 @@ export function setComponentProps(component, props, opts, context, /* FIXME: 强
 		component.context = context;
 	}
 
+	// 一次render可能对应多次setProps. 只在首次setProps时把现有的props移到prevProps
 	if (!component.prevProps) component.prevProps = component.props;
 	component.props = props;
 
@@ -45,7 +46,7 @@ export function setComponentProps(component, props, opts, context, /* FIXME: 强
 
 	if (opts!==NO_RENDER) {
 		if (opts===SYNC_RENDER || options.syncComponentUpdates!==false || !component.base) {
-			// 第一次render一定是同步
+			// 当component没有.base时，即刚mount时，第一次render一定是同步
 			renderComponent(component, SYNC_RENDER, mountAll);
 		}
 		else {
@@ -54,7 +55,7 @@ export function setComponentProps(component, props, opts, context, /* FIXME: 强
 		}
 	}
 
-	// 如果有__ref: 执行一次__ref(component)    (__ref会被多次执行且时机不定, 应该做成幂等的)
+	// 如果component有__ref: 执行一次__ref(component)    (__ref会被多次执行且时机不定, 应该做成幂等的)
 	if (component.__ref) component.__ref(component);
 }
 
@@ -82,7 +83,7 @@ export function renderComponent(component, opts, mountAll, isChild) {
 		initialChildComponent = component._component,
 		inst, cbase;
 
-	// if updating
+	// if updating (i.e. the component is already mounted)
 	if (isUpdate) {
 		component.props = previousProps;
 		component.state = previousState;
@@ -100,6 +101,7 @@ export function renderComponent(component, opts, mountAll, isChild) {
 		component.context = context;
 	}
 
+	// "consume" prevProps / prevState / prevContext / nextBase / _dirty
 	component.prevProps = component.prevState = component.prevContext = component.nextBase = null;
 	component._dirty = false;
 
@@ -111,6 +113,7 @@ export function renderComponent(component, opts, mountAll, isChild) {
 			context = extend(clone(context), component.getChildContext());
 		}
 
+		// inflate until we get a non-PFC component
 		while (isFunctionalComponent(rendered)) {
 			rendered = buildFunctionalComponent(rendered, context);
 		}
@@ -119,21 +122,29 @@ export function renderComponent(component, opts, mountAll, isChild) {
 			toUnmount, base;
 
 		if (isFunction(childComponent)) {
+			// rendered is a non-DOM, non-PFC component
 			// set up high order component link
 
 			let childProps = getNodeProps(rendered);
 			inst = initialChildComponent;
 
 			if (inst && inst.constructor===childComponent && childProps.key==inst.__key) {
+				// 如果上次render得到同样的childComponent 且key一致: 同步地render inst
 				setComponentProps(inst, childProps, SYNC_RENDER, context);
 			}
 			else {
+				// 否则:
+				//   - 新建一个inst
+				//   - 把上次的component放到toUnmount (toUnmount <- inst <- initialChildComponent)
 				toUnmount = inst;
 
 				inst = createComponent(childComponent, childProps, context);
+				// 如果内层inst没有nextBase，且当前级有nextBase，把nextBase给内层用 FIXME: 需要解除自己对nextBase的引用吗?
 				inst.nextBase = inst.nextBase || nextBase;
+				// 连接 自己<->内层的链表
 				inst._parentComponent = component;
 				component._component = inst;
+				// 更新 & 渲染inst
 				setComponentProps(inst, childProps, NO_RENDER, context);
 				renderComponent(inst, SYNC_RENDER, mountAll, true);
 			}
@@ -141,6 +152,7 @@ export function renderComponent(component, opts, mountAll, isChild) {
 			base = inst.base;
 		}
 		else {
+			// rendered is a DOM component
 			cbase = initialBase;
 
 			// destroy high order component link
@@ -181,7 +193,7 @@ export function renderComponent(component, opts, mountAll, isChild) {
 			base._component = componentRef;
 			base._componentConstructor = componentRef.constructor;
 		}
-	}
+	} // if !skip
 
 	if (!isUpdate || mountAll) {
 		mounts.unshift(component);
@@ -227,7 +239,7 @@ export function buildComponentFromVNode(dom, vnode, context, mountAll) {
 	// 如果找到owner c: 把props设置到c
 	if (c && isOwner && (!mountAll || c._component)) {
 		setComponentProps(c, props, ASYNC_RENDER, context, mountAll);
-		// FIXME: 此时c还没有被重新render, 为何可以用c.base ?
+		// FIXME: 此时c可能还没有被重新render, 为何可以用c.base ?
 		dom = c.base;
 	}
 	else {
@@ -241,7 +253,7 @@ export function buildComponentFromVNode(dom, vnode, context, mountAll) {
 		// 新建component instance
 		c = createComponent(vnode.nodeName, props, context);
 		// dom为真的条件: 当原dom没有_component, 或isDirectOwner为真时
-		// nextBase为真: ???
+		// nextBase为真: 如果没有从之前回收的instance继承nextBase
 		if (dom && !c.nextBase) {
 			c.nextBase = dom;
 			// passing dom/oldDom as nextBase will recycle it if unused, so bypass recycling on L241 /* FIXME: no longer L241 */
@@ -264,6 +276,7 @@ export function buildComponentFromVNode(dom, vnode, context, mountAll) {
 /** Remove a component from the DOM and recycle it.
  *	@param {Element} dom			A DOM node from which to unmount the given Component
  *	@param {Component} component	The Component instance to unmount
+ *  @param {boolean} remove 是否(将component.base移出dom, 回收component) FIXME: 看一下remove的起源
  *	@private
  */
 export function unmountComponent(component, remove) {
@@ -279,21 +292,26 @@ export function unmountComponent(component, remove) {
 	component.base = null;
 
 	// recursively tear down & recollect high-order component children:
+	// 如果有内层_component: 先unmount, 此时当前级的component不会被collectComponent (collectComponent)
 	let inner = component._component;
 	if (inner) {
 		unmountComponent(inner, remove);
 	}
-	else if (base) {
+	else if (/* no inner*/base) {
+		// 如果当前级是最外层: ref hook
 		if (base[ATTR_KEY] && base[ATTR_KEY].ref) base[ATTR_KEY].ref(null);
 
 		component.nextBase = base;
 
+		// 将base移出文档，回收component
 		if (remove) {
 			removeNode(base);
 			collectComponent(component);
 		}
 		let c;
-		while ((c=base.lastChild)) recollectNodeTree(c, !remove);
+		// 回收base的children
+		// ()
+		while ((c=base.lastChild)) recollectNodeTree(c, /* unmountonly */ !remove);
 		// removeOrphanedChildren(base.childNodes, true);
 	}
 
