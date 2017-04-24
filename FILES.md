@@ -28,7 +28,7 @@ Files are listed by functionality: VNode / Component
      |                                   | **Component** / 450 LOC
  102 | src/component.js                  | Base component class
   24 | src/linked-state.js               | create "linkedStateHandler", function that call setState() with value extracted from event
-  32 | src/vdom/component-recycler.js    |
+  32 | src/vdom/component-recycler.js    | component pool (not actually recycling component instances: only its dom are reused)
  283 | src/vdom/component.js             |
   22 | src/render-queue.js               | Queue for dirty Components
 -----+-----------------------------------+------------------------------

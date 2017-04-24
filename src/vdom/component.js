@@ -105,6 +105,7 @@ export function renderComponent(component, opts, mountAll, isChild) {
 	component.prevProps = component.prevState = component.prevContext = component.nextBase = null;
 	component._dirty = false;
 
+	// 不skip === 没有被shouldComponentUpdate返回false
 	if (!skip) {
 		if (component.render) rendered = component.render(props, state, context);
 
