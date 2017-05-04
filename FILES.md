@@ -4,7 +4,7 @@
      |                                 |
  LOC | filename                        | comment
 -----+---------------------------------+-------------------
-  60 | src/h.js                        | JSX reviver
+  60 | src/h.js                        | JSX -> VNode
    2 | src/vnode.js                    | VNode
   10 | src/clone-element.js            | clone of VNode
      |                                 | JSX / V-DOM Element: 160 LOC
@@ -25,8 +25,8 @@
   27 | src/options.js                  | options / hooks
   26 | src/preact.js                   | Overall Entrypoint
   10 | src/util.js                     |
- 754 | src/preact.d.ts                 |
-   9 | src/preact.js.flow              |
+ 754 | src/preact.d.ts                 | TypeScript decl
+   9 | src/preact.js.flow              | Flow decl
 -----+---------------------------------+-------------------
 1817 | total                           |
 ```
