@@ -7,6 +7,7 @@ const stack = [];
 const EMPTY_CHILDREN = [];
 
 /** JSX/hyperscript reviver
+ * 将JSX转换为VNode
 *	Benchmarks: https://esbench.com/bench/57ee8f8e330ab09900a1a1a0
  *	@see http://jasonformat.com/wtf-is-jsx
  *	@public
@@ -21,6 +22,7 @@ export function h(nodeName, attributes) {
 		delete attributes.children;
 	}
 	while (stack.length) {
+		// 展开stack中的嵌套数组
 		if ((child = stack.pop()) && child.pop!==undefined) {
 			for (i=child.length; i--; ) stack.push(child[i]);
 		}
@@ -33,6 +35,7 @@ export function h(nodeName, attributes) {
 				else if (typeof child!=='string') simple = false;
 			}
 
+			// 将两个连续的Text Node合并成一个
 			if (simple && lastSimple) {
 				children[children.length-1] += child;
 			}
