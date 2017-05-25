@@ -36,11 +36,14 @@ export function flushMounts() {
  */
 export function diff(dom, vnode, context, mountAll, parent, componentRoot) {
 	// diffLevel having been 0 here indicates initial entry into the diff (not a subdiff)
+  // 如果现在是第0层diff: 初始化isSvgMode / hydrating
 	if (!diffLevel++) {
 		// when first starting the diff, check if we're diffing an SVG or within an SVG
+    // 目前diff是否在<svg>元素内
 		isSvgMode = parent!=null && parent.ownerSVGElement!==undefined;
 
 		// hydration is inidicated by the existing element to be diffed not having a prop cache
+    // 
 		hydrating = dom!=null && !(ATTR_KEY in dom);
 	}
 
