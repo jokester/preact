@@ -23,3 +23,5 @@ export function removeNode(node: Node) {
 	let parentNode = node.parentNode;
 	if (parentNode) parentNode.removeChild(node);
 }
+
+export function presume<T>(value: unknown): asserts value is T {}
