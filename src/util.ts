@@ -8,7 +8,7 @@
 export function assign<
 	A extends Record<string, any>,
 	B extends Record<string, any>
->(obj: A, props: B): A & B {
+>(obj: A, props: B | undefined | null): A & B {
 	for (let i in props) ((obj as unknown) as B)[i] = props[i];
 	return /** @type {O & P} */ obj as A & B;
 }
