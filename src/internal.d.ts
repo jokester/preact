@@ -68,25 +68,39 @@ export namespace TypedPreactInternal {
 		data?: string | number; // From Text node
 	}
 
-	export interface VNode<P = {}> extends TypedPreact.VNode<P> {
+	/** FIXME : can we express constraints in TS? */
+	export type VNode<P = {}> = (TypedPreact.VNode<P> & {
+		// props that always exist
 		// Redefine type here using our internal ComponentFactory type
 		type: string | ComponentFactory<P>;
 		props: P & { children?: TypedPreact.ComponentChildren };
-		_children?: Array<VNode<any>> | null;
-		_parent: VNode | null;
+		constructor: unknown;
+	}) &
+		(MountedVNode | NonMountedVNode);
+
+	interface MountedVNode {
+		// props when mounted
+		_parent: VNode<unknown> & MountedVNode;
+		_children: Array<VNode<any>>;
 		_depth: number | null;
 		/**
 		 * The [first (for Fragments)] DOM child of a VNode
 		 */
-		_dom: PreactElement | null;
+		_dom: PreactElement;
 		/**
 		 * The last dom child of a Fragment, or components that return a Fragment
 		 */
 		_nextDom: PreactElement | null;
 		_component: Component | null;
 		_hydrating: boolean | null;
-		constructor: undefined;
 		_original?: VNode<unknown> | null;
+	}
+
+	interface NonMountedVNode {
+		// props when not mounted
+		_parent: null;
+		_children: null;
+		_dom: null;
 	}
 
 	export interface Component<P = {}, S = {}>
