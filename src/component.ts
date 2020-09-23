@@ -1,4 +1,4 @@
-import { assign } from './util';
+import { assign, presume } from './util';
 import { diff, commitRoot } from './diff/index';
 import options from './options';
 import { Fragment } from './create-element';
@@ -57,7 +57,7 @@ Component.prototype.setState = function<P, S>(
 
 	if (this._vnode) {
 		if (callback) this._renderCallbacks.push(callback);
-		enqueueRender(this);
+		enqueueRender(this as TypedPreactInternal.Component<unknown>);
 	}
 };
 
@@ -76,7 +76,7 @@ Component.prototype.forceUpdate = function<P, S>(
 		// shouldComponentUpdate
 		this._force = true;
 		if (callback) this._renderCallbacks.push(callback);
-		enqueueRender(this);
+		enqueueRender(this as TypedPreactInternal.Component<unknown>);
 	}
 };
 
@@ -98,7 +98,7 @@ Component.prototype.render = Fragment;
  */
 export function getDomSibling<P>(
 	/** TODO: is vnode ensured to be mounted? */
-	vnode: TypedPreactInternal.VNode<P>,
+	vnode: TypedPreactInternal.MountedVNode<P>,
 	childIndex?: null | number
 ): null | TypedPreactInternal.PreactElement {
 	if (childIndex == null) {
@@ -109,8 +109,9 @@ export function getDomSibling<P>(
 	}
 
 	let sibling;
-	for (; childIndex < vnode._children!.length; childIndex++) {
-		sibling = vnode._children![childIndex];
+
+	for (; childIndex < vnode._children.length; childIndex++) {
+		sibling = vnode._children[childIndex];
 
 		if (sibling != null && sibling._dom != null) {
 			// Since updateParentDomPointers keeps _dom pointer correct,
@@ -132,17 +133,18 @@ export function getDomSibling<P>(
  * Trigger in-place re-rendering of a component.
  * @param {import('./internal').Component} component The component to rerender
  */
-function renderComponent(
-	/* FIXME: mounted component? */ component: TypedPreactInternal.Component
+function renderComponent<P>(
+	/* FIXME: mounted component? */ component: TypedPreactInternal.Component<P>
 ) {
 	let vnode = component._vnode,
 		oldDom = vnode!._dom,
 		parentDom = component._parentDom;
 
 	if (parentDom) {
+		presume<TypedPreactInternal.MountedVNode<unknown>>(vnode);
 		let commitQueue: Function[] = [];
 		const oldVNode = assign({}, vnode);
-		oldVNode._original = oldVNode as typeof oldVNode._original;
+		oldVNode._original = oldVNode;
 
 		/* TODO: reduce `!` after changed callee */
 		let newDom = diff(
@@ -153,7 +155,7 @@ function renderComponent(
 			parentDom.ownerSVGElement !== undefined,
 			vnode!._hydrating != null ? [oldDom] : /* FIXME */ null!,
 			commitQueue,
-			oldDom == null ? getDomSibling(vnode!)! : oldDom,
+			oldDom == null ? getDomSibling(vnode)! : oldDom,
 			vnode!._hydrating!
 		);
 		commitRoot(commitQueue, vnode);
@@ -167,9 +169,12 @@ function renderComponent(
 /**
  * @param {import('./internal').VNode} vnode
  */
-function updateParentDomPointers(vnode: TypedPreactInternal.VNode): void {
-	if ((vnode = vnode._parent!) != null && vnode._component != null) {
-		vnode._dom = vnode._component.base = null;
+function updateParentDomPointers(
+	vnode: TypedPreactInternal.MountedVNode<unknown>
+): void {
+	if ((vnode = vnode._parent) != null && vnode._component != null) {
+		// TODO: understand intermediate states
+		vnode._dom = vnode._component.base = null!;
 		for (let i = 0; i < vnode._children.length; i++) {
 			let child = vnode._children[i];
 			if (child != null && child._dom != null) {
@@ -186,7 +191,7 @@ function updateParentDomPointers(vnode: TypedPreactInternal.VNode): void {
  * The render queue
  * @type {Array<import('./internal').Component>}
  */
-let rerenderQueue = [];
+let rerenderQueue: TypedPreactInternal.Component[] = [];
 
 /**
  * Asynchronously schedule a callback
@@ -208,13 +213,13 @@ const defer =
  * * [Callbacks synchronous and asynchronous](https://blog.ometer.com/2011/07/24/callbacks-synchronous-and-asynchronous/)
  */
 
-let prevDebounce;
+let prevDebounce: TypedPreactInternal.Options['debounceRendering'];
 
 /**
  * Enqueue a rerender of a component
  * @param {import('./internal').Component} c The component to rerender
  */
-export function enqueueRender(c) {
+export function enqueueRender(c: TypedPreactInternal.Component<unknown>) {
 	if (
 		(!c._dirty &&
 			(c._dirty = true) &&
@@ -231,7 +236,7 @@ export function enqueueRender(c) {
 function process() {
 	let queue;
 	while ((process._rerenderCount = rerenderQueue.length)) {
-		queue = rerenderQueue.sort((a, b) => a._vnode._depth - b._vnode._depth);
+		queue = rerenderQueue.sort((a, b) => a._vnode!._depth - b._vnode!._depth);
 		rerenderQueue = [];
 		// Don't update `renderCount` yet. Keep its value non-zero to prevent unnecessary
 		// process() calls from getting scheduled while `queue` is still being consumed.

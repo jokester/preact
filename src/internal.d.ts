@@ -69,20 +69,21 @@ export namespace TypedPreactInternal {
 	}
 
 	/** FIXME : can we express constraints in TS? */
-	export type VNode<P = {}> = (TypedPreact.VNode<P> & {
+	export type VNode<P = {}> = MountedVNode<P> | NonMountedVNode<P>;
+
+	type VNodeBase<P> = TypedPreact.VNode<P> & {
 		// props that always exist
 		// Redefine type here using our internal ComponentFactory type
 		type: string | ComponentFactory<P>;
 		props: P & { children?: TypedPreact.ComponentChildren };
 		constructor: unknown;
-	}) &
-		(MountedVNode | NonMountedVNode);
+	};
 
-	interface MountedVNode {
+	type MountedVNode<P> = VNodeBase<P> & {
 		// props when mounted
-		_parent: VNode<unknown> & MountedVNode;
+		_parent: VNode<unknown> & MountedVNode<P>;
 		_children: Array<VNode<any>>;
-		_depth: number | null;
+		_depth: number;
 		/**
 		 * The [first (for Fragments)] DOM child of a VNode
 		 */
@@ -91,24 +92,27 @@ export namespace TypedPreactInternal {
 		 * The last dom child of a Fragment, or components that return a Fragment
 		 */
 		_nextDom: PreactElement | null;
-		_component: Component | null;
+		_component: ComponentMounted<P, unknown>;
 		_hydrating: boolean | null;
-		_original?: VNode<unknown> | null;
-	}
+		_original?: VNode<P> | null;
+	};
 
-	interface NonMountedVNode {
+	type NonMountedVNode<P> = VNodeBase<P> & {
 		// props when not mounted
 		_parent: null;
 		_children: null;
 		_dom: null;
-	}
+		_depth: 0;
+	};
 
-	export interface Component<P = {}, S = {}>
-		extends TypedPreact.Component<P, S> {
+	export type Component<P = {}, S = {}> =
+		| ComponentMounted<P, S>
+		| ComponentNonMounted<P, S>;
+
+	type ComponentBase<P, S> = TypedPreact.Component<P, S> & {
 		// When component is functional component, this is reset to functional component
 		constructor: TypedPreact.ComponentType<P>;
 		state: S; // Override Component["state"] to not be readonly for internal use, specifically Hooks
-		base?: PreactElement;
 
 		_dirty: boolean;
 		_force?: boolean;
@@ -127,7 +131,14 @@ export namespace TypedPreactInternal {
 		_processingException?: Component<any, any> | null;
 		// Always read, set only when handling error. This is used to indicate at diffTime to set _processingException
 		_pendingError?: Component<any, any> | null;
-	}
+	};
+
+	type ComponentMounted<P, S> = ComponentBase<P, S> & {
+		base: PreactElement;
+	};
+	type ComponentNonMounted<P, S> = ComponentBase<P, S> & {
+		base?: null;
+	};
 
 	export interface PreactContext extends TypedPreact.Context<any> {
 		_id: string;
