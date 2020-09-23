@@ -5,6 +5,7 @@ import { diffChildren, placeChild } from './children';
 import { diffProps, setProperty } from './props';
 import { assign, removeNode } from '../util';
 import options from '../options';
+import { TypedPreactInternal } from '../internal';
 
 function reorderChildren(newVNode, oldDom, parentDom) {
 	for (let tmp = 0; tmp < newVNode._children.length; tmp++) {
@@ -52,15 +53,15 @@ function reorderChildren(newVNode, oldDom, parentDom) {
  * @param {boolean} [isHydrating] Whether or not we are in hydration
  */
 export function diff(
-	parentDom,
-	newVNode,
-	oldVNode,
-	globalContext,
-	isSvg,
-	excessDomChildren,
-	commitQueue,
-	oldDom,
-	isHydrating
+	parentDom: TypedPreactInternal.PreactElement,
+	newVNode: TypedPreactInternal.NonMountedVNode<unknown>,
+	oldVNode: TypedPreactInternal.VNode<unknown>,
+	globalContext: unknown,
+	isSvg: boolean | null | undefined,
+	excessDomChildren: unknown,
+	commitQueue: TypedPreactInternal.Component[],
+	oldDom: unknown,
+	isHydrating: boolean | null | undefined
 ) {
 	let tmp,
 		newType = newVNode.type;
@@ -288,7 +289,10 @@ export function diff(
  * which have callbacks to invoke in commitRoot
  * @param {import('../internal').VNode} root
  */
-export function commitRoot(commitQueue, root) {
+export function commitRoot(
+	commitQueue: TypedPreactInternal.Component[],
+	root: TypedPreactInternal.VNode
+) {
 	if (options._commit) options._commit(root, commitQueue);
 
 	commitQueue.some(c => {

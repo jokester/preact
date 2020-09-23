@@ -103,8 +103,7 @@ export function createVNode<
 		_original: original
 	};
 
-	if (original == null)
-		vnode._original = vnode as TypedPreactInternal.VNode<unknown>;
+	if (original == null) vnode._original = vnode;
 	if (options.vnode != null) options.vnode(vnode as TypedPreact.VNode);
 
 	return vnode;
@@ -114,9 +113,9 @@ export function createRef() {
 	return { current: null };
 }
 
-export function Fragment(props: TypedPreact.NormalizedProps) {
-	return props.children;
-}
+export const Fragment: TypedPreact.FunctionComponent<TypedPreact.NormalizedProps> = props => {
+	return props.children as TypedPreact.VNode<any> | null;
+};
 
 /**
  * Check if a the argument is a valid Preact VNode.
