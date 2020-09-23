@@ -2,6 +2,7 @@ import options from './options';
 import { TypedPreact } from './typed-preact';
 import { TypedPreactInternal } from './internal';
 import { EMPTY_OBJ } from './constants';
+import { presume } from './util';
 
 /**
  * Create an virtual node (used for JSX)
@@ -24,9 +25,10 @@ export function createElement<
 		ref: undefined | TypedPreact.Ref<any>,
 		i;
 	for (i in props || EMPTY_OBJ) {
-		if (i == 'key') key = props![i];
-		else if (i == 'ref') ref = props![i];
-		else normalizedProps[i] = props![i];
+		presume<TypedPreact.NormalizedProps>(props);
+		if (i == 'key') key = props[i];
+		else if (i == 'ref') ref = props[i];
+		else normalizedProps[i] = props[i];
 	}
 
 	if (arguments.length > 3) {
@@ -104,7 +106,7 @@ export function createVNode<
 	};
 
 	if (original == null) vnode._original = vnode;
-	if (options.vnode != null) options.vnode(vnode as TypedPreact.VNode);
+	if (options.vnode != null) options.vnode(vnode);
 
 	return vnode;
 }
