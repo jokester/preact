@@ -9,7 +9,7 @@ export namespace TypedPreact {
 
 	interface VNode<P = {}> {
 		type: ComponentType<P> | string;
-		props: P & { children: ComponentChildren };
+		props?: null | (P & { children?: ComponentChildren });
 		key: Key;
 		/**
 		 * ref is not guaranteed by React.ReactElement, for compatibility reasons
@@ -300,4 +300,10 @@ export namespace TypedPreact {
 	interface PreactContext<T> extends Context<T> {}
 
 	function createContext<T>(defaultValue: T): Context<T>;
+
+	interface NormalizedProps extends Record<string, unknown> {
+		key?: string | number;
+		ref?: Ref<any>;
+		children?: ComponentChildren;
+	}
 }
