@@ -77,6 +77,7 @@ export namespace TypedPreactInternal {
 		type: string | ComponentFactory<P>;
 		props: P & { children?: TypedPreact.ComponentChildren };
 		constructor: unknown;
+		_original?: VNode<P> | null;
 	};
 
 	type MountedVNode<P> = VNodeBase<P> & {
@@ -94,7 +95,6 @@ export namespace TypedPreactInternal {
 		_nextDom: PreactElement | null;
 		_component: ComponentMounted<P, unknown>;
 		_hydrating: boolean | null;
-		_original?: VNode<P> | null;
 	};
 
 	type NonMountedVNode<P> = VNodeBase<P> & {

@@ -9,7 +9,7 @@ export namespace TypedPreact {
 
 	interface VNode<P = {}> {
 		type: ComponentType<P> | string;
-		props?: null | (P & { children?: ComponentChildren });
+		props: null | undefined | (P & { children?: ComponentChildren });
 		key: Key;
 		/**
 		 * ref is not guaranteed by React.ReactElement, for compatibility reasons

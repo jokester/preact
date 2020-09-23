@@ -1,5 +1,5 @@
 import { assign, presume } from './util';
-import { diff, commitRoot } from './diff/index';
+import { diff, commitRoot } from './diff';
 import options from './options';
 import { Fragment } from './create-element';
 import { TypedPreactInternal } from './internal';
