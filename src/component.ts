@@ -142,11 +142,10 @@ function renderComponent<P>(
 
 	if (parentDom) {
 		presume<TypedPreactInternal.MountedVNode<unknown>>(vnode);
-		let commitQueue: Function[] = [];
+		let commitQueue: TypedPreactInternal.Component[] = [];
 		const oldVNode = assign({}, vnode);
 		oldVNode._original = oldVNode;
 
-		/* TODO: reduce `!` after changed callee */
 		let newDom = diff(
 			parentDom,
 			vnode,

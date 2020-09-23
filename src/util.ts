@@ -25,3 +25,7 @@ export function removeNode(node: Node) {
 }
 
 export function presume<T>(value: unknown): asserts value is T {}
+
+export function casted<T>(value: unknown): value is NonNullable<T> {
+	return value as boolean;
+}

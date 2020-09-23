@@ -54,7 +54,7 @@ function reorderChildren(newVNode, oldDom, parentDom) {
  */
 export function diff(
 	parentDom: TypedPreactInternal.PreactElement,
-	newVNode: TypedPreactInternal.NonMountedVNode<unknown>,
+	newVNode: TypedPreactInternal.VNode<unknown>,
 	oldVNode: TypedPreactInternal.VNode<unknown>,
 	globalContext: unknown,
 	isSvg: boolean | null | undefined,
