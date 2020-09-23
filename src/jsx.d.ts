@@ -1,6 +1,8 @@
 // Users who only use Preact for SSR might not specify "dom" in their lib in tsconfig.json
 /// <reference lib="dom" />
 
+import { TypedPreact } from './typed-preact';
+
 type Defaultize<Props, Defaults> =
 	// Distribute over unions
 	Props extends any // Make any properties included in Default optional
@@ -20,9 +22,9 @@ export namespace JSXInternal {
 		key?: any;
 	}
 
-	interface Element extends preact.VNode<any> {}
+	interface Element extends TypedPreact.VNode<any> {}
 
-	interface ElementClass extends preact.Component<any, any> {}
+	interface ElementClass extends TypedPreact.Component<any, any> {}
 
 	interface ElementAttributesProperty {
 		props: any;
@@ -397,7 +399,7 @@ export namespace JSXInternal {
 	>;
 
 	interface DOMAttributes<Target extends EventTarget>
-		extends preact.PreactDOMAttributes {
+		extends TypedPreact.PreactDOMAttributes {
 		// Image Events
 		onLoad?: GenericEventHandler<Target>;
 		onLoadCapture?: GenericEventHandler<Target>;
@@ -595,7 +597,7 @@ export namespace JSXInternal {
 	}
 
 	interface HTMLAttributes<RefType extends EventTarget = EventTarget>
-		extends preact.ClassAttributes<RefType>,
+		extends TypedPreact.ClassAttributes<RefType>,
 			DOMAttributes<RefType> {
 		// Standard HTML Attributes
 		accept?: string;

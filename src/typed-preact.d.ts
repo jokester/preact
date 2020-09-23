@@ -1,9 +1,6 @@
-export = preact;
-export as namespace preact;
-
 import { JSXInternal } from './jsx';
 
-declare namespace preact {
+export namespace TypedPreact {
 	export import JSX = JSXInternal;
 
 	//
