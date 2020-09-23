@@ -1,4 +1,8 @@
 import options from './options';
+import { TypedPreact } from './typed-preact';
+import { TypedPreactInternal } from './internal';
+import { EMPTY_OBJ } from './constants';
+import { presume } from './util';
 
 /**
  * Create an virtual node (used for JSX)
@@ -8,12 +12,20 @@ import options from './options';
  * @param {Array<import('.').ComponentChildren>} [children] The children of the virtual node
  * @returns {import('./internal').VNode}
  */
-export function createElement(type, props, children) {
-	let normalizedProps = {},
+export function createElement<
+	C extends string | TypedPreact.ComponentType<P>,
+	P extends TypedPreact.NormalizedProps
+>(
+	type: C,
+	props: P | null | undefined,
+	...children: TypedPreact.ComponentChildren[]
+): TypedPreact.VNode<P> {
+	let normalizedProps: TypedPreact.NormalizedProps = {} as any,
 		key,
-		ref,
+		ref: undefined | TypedPreact.Ref<any>,
 		i;
-	for (i in props) {
+	for (i in props || EMPTY_OBJ) {
+		presume<TypedPreact.NormalizedProps>(props);
 		if (i == 'key') key = props[i];
 		else if (i == 'ref') ref = props[i];
 		else normalizedProps[i] = props[i];
@@ -23,7 +35,9 @@ export function createElement(type, props, children) {
 		children = [children];
 		// https://github.com/preactjs/preact/issues/1916
 		for (i = 3; i < arguments.length; i++) {
-			children.push(arguments[i]);
+			(children as TypedPreact.ComponentChild[]).push(
+				arguments[i] as TypedPreact.ComponentChild
+			);
 		}
 	}
 	if (children != null) {
@@ -32,15 +46,19 @@ export function createElement(type, props, children) {
 
 	// If a Component VNode, check for and apply defaultProps
 	// Note: type may be undefined in development, must never error here.
-	if (typeof type == 'function' && type.defaultProps != null) {
-		for (i in type.defaultProps) {
+	if (
+		typeof type == 'function' &&
+		(type as TypedPreact.ComponentClass<P>).defaultProps != null
+	) {
+		const t = type as TypedPreact.ComponentClass<P>;
+		for (i in t.defaultProps) {
 			if (normalizedProps[i] === undefined) {
-				normalizedProps[i] = type.defaultProps[i];
+				normalizedProps[i] = t.defaultProps![i];
 			}
 		}
 	}
 
-	return createVNode(type, normalizedProps, key, ref, null);
+	return createVNode<C, P>(type, normalizedProps as P, key, ref, null);
 }
 
 /**
@@ -55,10 +73,19 @@ export function createElement(type, props, children) {
  * receive a reference to its created child
  * @returns {import('./internal').VNode}
  */
-export function createVNode(type, props, key, ref, original) {
+export function createVNode<
+	C extends string | TypedPreact.ComponentType<P>,
+	P extends TypedPreact.NormalizedProps
+>(
+	type: C,
+	props: P,
+	key: string | number | undefined,
+	ref: TypedPreact.Ref<any> | null | undefined,
+	original: null
+): TypedPreact.VNode<P> {
 	// V8 seems to be better at detecting type shapes if the object is allocated from the same call site
 	// Do not inline into createElement and coerceToVNode!
-	const vnode = {
+	const vnode: TypedPreactInternal.VNode<P> = {
 		type,
 		props,
 		key,
@@ -71,7 +98,7 @@ export function createVNode(type, props, key, ref, original) {
 		// be set to dom.nextSibling which can return `null` and it is important
 		// to be able to distinguish between an uninitialized _nextDom and
 		// a _nextDom that has been set to `null`
-		_nextDom: undefined,
+		_nextDom: null,
 		_component: null,
 		_hydrating: null,
 		constructor: undefined,
@@ -88,14 +115,14 @@ export function createRef() {
 	return { current: null };
 }
 
-export function Fragment(props) {
-	return props.children;
-}
+export const Fragment: TypedPreact.FunctionComponent<TypedPreact.NormalizedProps> = props => {
+	return props.children as TypedPreact.VNode<any> | null;
+};
 
 /**
  * Check if a the argument is a valid Preact VNode.
  * @param {*} vnode
  * @returns {vnode is import('./internal').VNode}
  */
-export const isValidElement = vnode =>
+export const isValidElement = (vnode: TypedPreact.VNode) =>
 	vnode != null && vnode.constructor === undefined;

@@ -1,7 +1,10 @@
 import { EMPTY_OBJ, EMPTY_ARR } from './constants';
-import { commitRoot, diff } from './diff/index';
+import { commitRoot, diff } from './diff';
 import { createElement, Fragment } from './create-element';
 import options from './options';
+import { TypedPreactInternal } from './internal';
+import { TypedPreact } from './typed-preact';
+import { presume } from './util';
 
 const IS_HYDRATE = EMPTY_OBJ;
 
@@ -13,7 +16,11 @@ const IS_HYDRATE = EMPTY_OBJ;
  * @param {Element | Text} [replaceNode] Optional: Attempt to re-use an
  * existing DOM tree rooted at `replaceNode`
  */
-export function render(vnode, parentDom, replaceNode) {
+export function render(
+	vnode: TypedPreact.VNode<any>,
+	parentDom: TypedPreactInternal.PreactElement,
+	replaceNode: TypedPreactInternal.PreactElement | { _children: undefined }
+) {
 	if (options._root) options._root(vnode, parentDom);
 
 	// We abuse the `replaceNode` parameter in `hydrate()` to signal if we
@@ -32,13 +39,16 @@ export function render(vnode, parentDom, replaceNode) {
 	vnode = createElement(Fragment, null, [vnode]);
 
 	// List of effects that need to be called after diffing.
-	let commitQueue = [];
+	let commitQueue: TypedPreactInternal.Component[] = [];
 	diff(
 		parentDom,
 		// Determine the new vnode tree and store it on the DOM element on
 		// our custom `_children` property.
-		((isHydrating ? parentDom : replaceNode || parentDom)._children = vnode),
-		oldVNode || EMPTY_OBJ,
+		((isHydrating
+			? parentDom
+			: replaceNode || parentDom
+		)._children = vnode as TypedPreactInternal.NonMountedVNode<any>),
+		oldVNode || ((EMPTY_OBJ as unknown) as TypedPreactInternal.VNode<unknown>),
 		EMPTY_OBJ,
 		parentDom.ownerSVGElement !== undefined,
 		replaceNode && !isHydrating
@@ -52,6 +62,7 @@ export function render(vnode, parentDom, replaceNode) {
 		replaceNode || EMPTY_OBJ,
 		isHydrating
 	);
+	presume<TypedPreactInternal.MountedVNode<any>>(vnode);
 
 	// Flush all queued effects
 	commitRoot(commitQueue, vnode);
@@ -63,6 +74,9 @@ export function render(vnode, parentDom, replaceNode) {
  * @param {import('./internal').PreactElement} parentDom The DOM element to
  * update
  */
-export function hydrate(vnode, parentDom) {
-	render(vnode, parentDom, IS_HYDRATE);
+export function hydrate(
+	vnode: TypedPreact.VNode,
+	parentDom: TypedPreactInternal.PreactElement
+) {
+	render(vnode, parentDom, IS_HYDRATE as { _children: undefined });
 }

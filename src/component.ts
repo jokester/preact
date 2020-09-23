@@ -1,7 +1,9 @@
-import { assign } from './util';
-import { diff, commitRoot } from './diff/index';
+import { assign, presume } from './util';
+import { diff, commitRoot } from './diff';
 import options from './options';
 import { Fragment } from './create-element';
+import { TypedPreactInternal } from './internal';
+import { TypedPreact } from './typed-preact';
 
 /**
  * Base Component class. Provides `setState()` and `forceUpdate()`, which
@@ -10,7 +12,11 @@ import { Fragment } from './create-element';
  * @param {object} context The initial context from parent components'
  * getChildContext
  */
-export function Component(props, context) {
+export function Component<P, S>(
+	this: TypedPreactInternal.Component<P, S>,
+	props: P,
+	context: unknown
+) {
 	this.props = props;
 	this.context = context;
 }
@@ -23,7 +29,11 @@ export function Component(props, context) {
  * @param {() => void} [callback] A function to be called once component state is
  * updated
  */
-Component.prototype.setState = function(update, callback) {
+Component.prototype.setState = function<P, S>(
+	this: TypedPreactInternal.Component<P, S>,
+	update: Parameters<TypedPreact.Component<P, S>['setState']>[0],
+	callback: Parameters<TypedPreact.Component<P, S>['setState']>[1]
+) {
 	// only clone state when copying to nextState the first time.
 	let s;
 	if (this._nextState != null && this._nextState !== this.state) {
@@ -47,7 +57,7 @@ Component.prototype.setState = function(update, callback) {
 
 	if (this._vnode) {
 		if (callback) this._renderCallbacks.push(callback);
-		enqueueRender(this);
+		enqueueRender(this as TypedPreactInternal.Component<unknown>);
 	}
 };
 
@@ -56,14 +66,17 @@ Component.prototype.setState = function(update, callback) {
  * @param {() => void} [callback] A function to be called after component is
  * re-rendered
  */
-Component.prototype.forceUpdate = function(callback) {
+Component.prototype.forceUpdate = function<P, S>(
+	this: TypedPreactInternal.Component<P, S>,
+	callback: Parameters<TypedPreact.Component<P, S>['forceUpdate']>[0]
+) {
 	if (this._vnode) {
 		// Set render mode so that we can differentiate where the render request
 		// is coming from. We need this because forceUpdate should never call
 		// shouldComponentUpdate
 		this._force = true;
 		if (callback) this._renderCallbacks.push(callback);
-		enqueueRender(this);
+		enqueueRender(this as TypedPreactInternal.Component<unknown>);
 	}
 };
 
@@ -83,7 +96,11 @@ Component.prototype.render = Fragment;
  * @param {import('./internal').VNode} vnode
  * @param {number | null} [childIndex]
  */
-export function getDomSibling(vnode, childIndex) {
+export function getDomSibling<P>(
+	/** TODO: is vnode ensured to be mounted? */
+	vnode: TypedPreactInternal.MountedVNode<P>,
+	childIndex?: null | number
+): null | TypedPreactInternal.PreactElement {
 	if (childIndex == null) {
 		// Use childIndex==null as a signal to resume the search from the vnode's sibling
 		return vnode._parent
@@ -92,6 +109,7 @@ export function getDomSibling(vnode, childIndex) {
 	}
 
 	let sibling;
+
 	for (; childIndex < vnode._children.length; childIndex++) {
 		sibling = vnode._children[childIndex];
 
@@ -115,13 +133,16 @@ export function getDomSibling(vnode, childIndex) {
  * Trigger in-place re-rendering of a component.
  * @param {import('./internal').Component} component The component to rerender
  */
-function renderComponent(component) {
+function renderComponent<P>(
+	/* FIXME: mounted component? */ component: TypedPreactInternal.Component<P>
+) {
 	let vnode = component._vnode,
-		oldDom = vnode._dom,
+		oldDom = vnode!._dom,
 		parentDom = component._parentDom;
 
 	if (parentDom) {
-		let commitQueue = [];
+		presume<TypedPreactInternal.MountedVNode<unknown>>(vnode);
+		let commitQueue: TypedPreactInternal.Component[] = [];
 		const oldVNode = assign({}, vnode);
 		oldVNode._original = oldVNode;
 
@@ -131,15 +152,15 @@ function renderComponent(component) {
 			oldVNode,
 			component._globalContext,
 			parentDom.ownerSVGElement !== undefined,
-			vnode._hydrating != null ? [oldDom] : null,
+			vnode!._hydrating != null ? [oldDom] : /* FIXME */ null!,
 			commitQueue,
-			oldDom == null ? getDomSibling(vnode) : oldDom,
-			vnode._hydrating
+			oldDom == null ? getDomSibling(vnode)! : oldDom,
+			vnode!._hydrating!
 		);
 		commitRoot(commitQueue, vnode);
 
 		if (newDom != oldDom) {
-			updateParentDomPointers(vnode);
+			updateParentDomPointers(vnode!);
 		}
 	}
 }
@@ -147,9 +168,12 @@ function renderComponent(component) {
 /**
  * @param {import('./internal').VNode} vnode
  */
-function updateParentDomPointers(vnode) {
+function updateParentDomPointers(
+	vnode: TypedPreactInternal.MountedVNode<unknown>
+): void {
 	if ((vnode = vnode._parent) != null && vnode._component != null) {
-		vnode._dom = vnode._component.base = null;
+		// TODO: understand intermediate states
+		vnode._dom = vnode._component.base = null!;
 		for (let i = 0; i < vnode._children.length; i++) {
 			let child = vnode._children[i];
 			if (child != null && child._dom != null) {
@@ -166,7 +190,7 @@ function updateParentDomPointers(vnode) {
  * The render queue
  * @type {Array<import('./internal').Component>}
  */
-let rerenderQueue = [];
+let rerenderQueue: TypedPreactInternal.Component[] = [];
 
 /**
  * Asynchronously schedule a callback
@@ -188,13 +212,13 @@ const defer =
  * * [Callbacks synchronous and asynchronous](https://blog.ometer.com/2011/07/24/callbacks-synchronous-and-asynchronous/)
  */
 
-let prevDebounce;
+let prevDebounce: TypedPreactInternal.Options['debounceRendering'];
 
 /**
  * Enqueue a rerender of a component
  * @param {import('./internal').Component} c The component to rerender
  */
-export function enqueueRender(c) {
+export function enqueueRender(c: TypedPreactInternal.Component<unknown>) {
 	if (
 		(!c._dirty &&
 			(c._dirty = true) &&
@@ -211,7 +235,7 @@ export function enqueueRender(c) {
 function process() {
 	let queue;
 	while ((process._rerenderCount = rerenderQueue.length)) {
-		queue = rerenderQueue.sort((a, b) => a._vnode._depth - b._vnode._depth);
+		queue = rerenderQueue.sort((a, b) => a._vnode!._depth - b._vnode!._depth);
 		rerenderQueue = [];
 		// Don't update `renderCount` yet. Keep its value non-zero to prevent unnecessary
 		// process() calls from getting scheduled while `queue` is still being consumed.

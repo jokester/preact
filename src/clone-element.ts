@@ -1,5 +1,6 @@
 import { assign } from './util';
 import { createVNode } from './create-element';
+import { TypedPreact } from './typed-preact';
 
 /**
  * Clones the given VNode, optionally adding attributes/props and replacing its children.
@@ -8,8 +9,12 @@ import { createVNode } from './create-element';
  * @param {Array<import('./index').ComponentChildren>} rest Any additional arguments will be used as replacement children.
  * @returns {import('./internal').VNode}
  */
-export function cloneElement(vnode, props, children) {
-	let normalizedProps = assign({}, vnode.props),
+export function cloneElement<P extends TypedPreact.NormalizedProps>(
+	vnode: TypedPreact.VNode<P>,
+	props: P,
+	...children: TypedPreact.ComponentChildren[]
+): TypedPreact.VNode<P> {
+	let normalizedProps: TypedPreact.NormalizedProps = assign({}, vnode.props),
 		key,
 		ref,
 		i;
@@ -29,9 +34,9 @@ export function cloneElement(vnode, props, children) {
 		normalizedProps.children = children;
 	}
 
-	return createVNode(
+	return createVNode<typeof vnode.type, P>(
 		vnode.type,
-		normalizedProps,
+		normalizedProps as P,
 		key || vnode.key,
 		ref || vnode.ref,
 		null
