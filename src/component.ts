@@ -2,6 +2,8 @@ import { assign } from './util';
 import { diff, commitRoot } from './diff/index';
 import options from './options';
 import { Fragment } from './create-element';
+import { TypedPreactInternal } from './internal';
+import { TypedPreact } from './typed-preact';
 
 /**
  * Base Component class. Provides `setState()` and `forceUpdate()`, which
@@ -10,7 +12,11 @@ import { Fragment } from './create-element';
  * @param {object} context The initial context from parent components'
  * getChildContext
  */
-export function Component(props, context) {
+export function Component<P, S>(
+	this: TypedPreactInternal.Component<P, S>,
+	props: P,
+	context: unknown
+) {
 	this.props = props;
 	this.context = context;
 }
@@ -23,7 +29,11 @@ export function Component(props, context) {
  * @param {() => void} [callback] A function to be called once component state is
  * updated
  */
-Component.prototype.setState = function(update, callback) {
+Component.prototype.setState = function<P, S>(
+	this: TypedPreactInternal.Component<P, S>,
+	update: Parameters<TypedPreact.Component<P, S>['setState']>[0],
+	callback: Parameters<TypedPreact.Component<P, S>['setState']>[1]
+) {
 	// only clone state when copying to nextState the first time.
 	let s;
 	if (this._nextState != null && this._nextState !== this.state) {
@@ -56,7 +66,10 @@ Component.prototype.setState = function(update, callback) {
  * @param {() => void} [callback] A function to be called after component is
  * re-rendered
  */
-Component.prototype.forceUpdate = function(callback) {
+Component.prototype.forceUpdate = function<P, S>(
+	this: TypedPreactInternal.Component<P, S>,
+	callback: Parameters<TypedPreact.Component<P, S>['forceUpdate']>[0]
+) {
 	if (this._vnode) {
 		// Set render mode so that we can differentiate where the render request
 		// is coming from. We need this because forceUpdate should never call
@@ -83,7 +96,11 @@ Component.prototype.render = Fragment;
  * @param {import('./internal').VNode} vnode
  * @param {number | null} [childIndex]
  */
-export function getDomSibling(vnode, childIndex) {
+export function getDomSibling<P>(
+	/** TODO: is vnode ensured to be mounted? */
+	vnode: TypedPreactInternal.VNode<P>,
+	childIndex?: null | number
+): null | TypedPreactInternal.PreactElement {
 	if (childIndex == null) {
 		// Use childIndex==null as a signal to resume the search from the vnode's sibling
 		return vnode._parent
@@ -92,8 +109,8 @@ export function getDomSibling(vnode, childIndex) {
 	}
 
 	let sibling;
-	for (; childIndex < vnode._children.length; childIndex++) {
-		sibling = vnode._children[childIndex];
+	for (; childIndex < vnode._children!.length; childIndex++) {
+		sibling = vnode._children![childIndex];
 
 		if (sibling != null && sibling._dom != null) {
 			// Since updateParentDomPointers keeps _dom pointer correct,
@@ -115,31 +132,34 @@ export function getDomSibling(vnode, childIndex) {
  * Trigger in-place re-rendering of a component.
  * @param {import('./internal').Component} component The component to rerender
  */
-function renderComponent(component) {
+function renderComponent(
+	/* FIXME: mounted component? */ component: TypedPreactInternal.Component
+) {
 	let vnode = component._vnode,
-		oldDom = vnode._dom,
+		oldDom = vnode!._dom,
 		parentDom = component._parentDom;
 
 	if (parentDom) {
-		let commitQueue = [];
+		let commitQueue: Function[] = [];
 		const oldVNode = assign({}, vnode);
-		oldVNode._original = oldVNode;
+		oldVNode._original = oldVNode as typeof oldVNode._original;
 
+		/* TODO: reduce `!` after changed callee */
 		let newDom = diff(
 			parentDom,
 			vnode,
 			oldVNode,
 			component._globalContext,
 			parentDom.ownerSVGElement !== undefined,
-			vnode._hydrating != null ? [oldDom] : null,
+			vnode!._hydrating != null ? [oldDom] : /* FIXME */ null!,
 			commitQueue,
-			oldDom == null ? getDomSibling(vnode) : oldDom,
-			vnode._hydrating
+			oldDom == null ? getDomSibling(vnode!)! : oldDom,
+			vnode!._hydrating!
 		);
 		commitRoot(commitQueue, vnode);
 
 		if (newDom != oldDom) {
-			updateParentDomPointers(vnode);
+			updateParentDomPointers(vnode!);
 		}
 	}
 }
@@ -147,8 +167,8 @@ function renderComponent(component) {
 /**
  * @param {import('./internal').VNode} vnode
  */
-function updateParentDomPointers(vnode) {
-	if ((vnode = vnode._parent) != null && vnode._component != null) {
+function updateParentDomPointers(vnode: TypedPreactInternal.VNode): void {
+	if ((vnode = vnode._parent!) != null && vnode._component != null) {
 		vnode._dom = vnode._component.base = null;
 		for (let i = 0; i < vnode._children.length; i++) {
 			let child = vnode._children[i];
