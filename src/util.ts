@@ -5,9 +5,12 @@
  * @param {P} props The object to copy properties from
  * @returns {O & P}
  */
-export function assign(obj, props) {
-	for (let i in props) obj[i] = props[i];
-	return /** @type {O & P} */ (obj);
+export function assign<
+	A extends Record<string, any>,
+	B extends Record<string, any>
+>(obj: A, props: B): A & B {
+	for (let i in props) ((obj as unknown) as B)[i] = props[i];
+	return /** @type {O & P} */ obj as A & B;
 }
 
 /**
@@ -16,7 +19,7 @@ export function assign(obj, props) {
  * is smaller than including a dedicated polyfill.
  * @param {Node} node The node to remove
  */
-export function removeNode(node) {
+export function removeNode(node: Node) {
 	let parentNode = node.parentNode;
 	if (parentNode) parentNode.removeChild(node);
 }
