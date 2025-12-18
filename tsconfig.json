@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "jsx": "react",
+    "jsxFactory": "createElement",
+    "jsxFragmentFactory": "Fragment",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "preact": ["."],
+      "preact/*": ["./*"]
+    },
+    "lib": ["DOM", "ES2020"],
+    "noEmit": true,
+    "types": ["vitest/globals"]
+  },
+  "include": [
+    "src/**/*",
+    "hooks/src/**/*",
+    "compat/src/**/*",
+    "debug/src/**/*",
+    "devtools/src/**/*",
+    "jsx-runtime/src/**/*",
+    "test-utils/src/**/*"
+  ],
+  "exclude": ["node_modules", "dist", "**/dist", "coverage", "demo"]
+}

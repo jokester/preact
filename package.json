@@ -7,7 +7,7 @@
   "main": "dist/preact.js",
   "module": "dist/preact.mjs",
   "umd:main": "dist/preact.umd.js",
-  "source": "src/index.js",
+  "source": "src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.d.ts",

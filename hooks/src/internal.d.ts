@@ -6,7 +6,7 @@ import {
 	HookType,
 	ErrorInfo
 } from '../../src/internal';
-import { Reducer, StateUpdater } from '.';
+import { Reducer, Dispatch } from '.';
 
 export { PreactContext };
 
@@ -43,7 +43,7 @@ export interface Component
 
 export interface VNode extends Omit<PreactVNode, '_component'> {
 	_mask?: [number, number];
-	_component?: Component; // Override with our specific Component type
+	_component?: Component | null; // Override with our specific Component type
 }
 
 export type HookState =
@@ -84,8 +84,8 @@ export interface MemoHookState<T = unknown> extends BaseHookState {
 
 export interface ReducerHookState<S = unknown, A = unknown>
 	extends BaseHookState {
-	_nextValue?: [S, StateUpdater<S>];
-	_value?: [S, StateUpdater<S>];
+	_nextValue?: [S, Dispatch<A>];
+	_value?: [S, Dispatch<A>];
 	_component?: Component;
 	_reducer?: Reducer<S, A>;
 }

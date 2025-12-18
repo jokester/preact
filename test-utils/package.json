@@ -6,7 +6,7 @@
   "main": "dist/testUtils.js",
   "module": "dist/testUtils.mjs",
   "umd:main": "dist/testUtils.umd.js",
-  "source": "src/index.js",
+  "source": "src/index.ts",
   "types": "src/index.d.ts",
   "license": "MIT",
   "mangle": {

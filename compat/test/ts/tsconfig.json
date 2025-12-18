@@ -9,9 +9,13 @@
     "jsx": "react",
     "noEmit": true,
     "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "typeRoots": ["../../../", "../../../node_modules"],
     "paths": {
-      "preact": ["../../../src/index.d.ts"]
+      "preact": ["../../../src/index.d.ts"],
+      "preact/compat": ["../../src/index.d.ts"]
     }
   },
-  "include": ["./**/*.ts", "./**/*.tsx"]
+  "include": ["./**/*.ts", "./**/*.tsx"],
+  "exclude": ["../../src/**/*.ts"]
 }
