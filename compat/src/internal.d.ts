@@ -1,13 +1,14 @@
 import {
 	Component as PreactComponent,
 	VNode as PreactVNode,
-	FunctionComponent as PreactFunctionComponent
+	FunctionComponent as PreactFunctionComponent,
+	PreactElement
 } from '../../src/internal';
 import { SuspenseProps } from './suspense';
 
 export { ComponentChildren } from '../..';
 
-export { PreactElement } from '../../src/internal';
+export { PreactElement };
 
 export interface Component<P = {}, S = {}> extends PreactComponent<P, S> {
 	isReactComponent?: object;
@@ -26,12 +27,11 @@ export interface Component<P = {}, S = {}> extends PreactComponent<P, S> {
 
 export interface FunctionComponent<P = {}> extends PreactFunctionComponent<P> {
 	shouldComponentUpdate?(nextProps: Readonly<P>): boolean;
-	_forwarded?: boolean;
 	_patchedLifecycles?: true;
 }
 
 export interface VNode<T = any> extends PreactVNode<T> {
-	$$typeof?: symbol | string;
+	$$typeof?: symbol;
 	preactCompatNormalized?: boolean;
 }
 

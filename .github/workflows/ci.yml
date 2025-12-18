@@ -2,47 +2,46 @@ name: CI
 
 on:
   workflow_dispatch:
-  workflow_call:
   pull_request:
     branches:
       - '**'
   push:
     branches:
-      - master
+      - main
       - restructure
+      - v11
 
 jobs:
+  filter_jobs:
+    name: Filter jobs
+    runs-on: ubuntu-latest
+    outputs:
+      jsChanged: ${{ steps.filter.outputs.jsChanged }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Should be kept in sync with the filter in the PR Reporter workflow
+          predicate-quantifier: 'every'
+          filters: |
+            jsChanged:
+              - '**/src/**/*.js'
+              - '!devtools/src/devtools.js'
+
+  compressed_size:
+    name: Compressed Size
+    needs: filter_jobs
+    if: ${{ needs.filter_jobs.outputs.jsChanged == 'true' }}
+    uses: ./.github/workflows/size.yml
+
   build_test:
     name: Build & Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version-file: 'package.json'
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
-      - run: npm ci
-      - name: test
-        env:
-          CI: true
-          COVERAGE: true
-          FLAKEY: false
-        # Not using `npm test` since it rebuilds source which npm ci has already done
-        run: |
-          npm run lint
-          npm run test:unit
-      - name: Coveralls GitHub Action
-        uses: coverallsapp/github-action@v2.1.2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Package
-        # Use --ignore-scripts here to avoid re-building again before pack
-        run: |
-          npm pack --ignore-scripts
-          mv preact-*.tgz preact.tgz
-      - name: Upload npm package
-        uses: actions/upload-artifact@v3
-        with:
-          name: npm-package
-          path: preact.tgz
+    needs: filter_jobs
+    uses: ./.github/workflows/build-test.yml
+
+  benchmarks:
+    name: Benchmarks
+    needs: build_test
+    if: ${{ needs.filter_jobs.outputs.jsChanged == 'true' }}
+    uses: ./.github/workflows/benchmarks.yml

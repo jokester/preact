@@ -1,11 +1,14 @@
 import { assign, slice } from './util';
 import { createVNode } from './create-element';
+import { NULL } from './constants';
 
 /**
- * Clones the given VNode, optionally adding attributes/props and replacing its children.
+ * Clones the given VNode, optionally adding attributes/props and replacing its
+ * children.
  * @param {import('./internal').VNode} vnode The virtual DOM element to clone
  * @param {object} props Attributes/props to add when cloning
- * @param {Array<import('./internal').ComponentChildren>} rest Any additional arguments will be used as replacement children.
+ * @param {Array<import('./internal').ComponentChildren>} rest Any additional arguments will be used
+ * as replacement children.
  * @returns {import('./internal').VNode}
  */
 export function cloneElement(vnode, props, children) {
@@ -14,20 +17,10 @@ export function cloneElement(vnode, props, children) {
 		ref,
 		i;
 
-	let defaultProps;
-
-	if (vnode.type && vnode.type.defaultProps) {
-		defaultProps = vnode.type.defaultProps;
-	}
-
 	for (i in props) {
 		if (i == 'key') key = props[i];
-		else if (i == 'ref') ref = props[i];
-		else if (props[i] === undefined && defaultProps !== undefined) {
-			normalizedProps[i] = defaultProps[i];
-		} else {
-			normalizedProps[i] = props[i];
-		}
+		else if (i == 'ref' && typeof vnode.type != 'function') ref = props[i];
+		else normalizedProps[i] = props[i];
 	}
 
 	if (arguments.length > 2) {
@@ -40,6 +33,6 @@ export function cloneElement(vnode, props, children) {
 		normalizedProps,
 		key || vnode.key,
 		ref || vnode.ref,
-		null
+		NULL
 	);
 }

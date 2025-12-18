@@ -1,8 +1,10 @@
 export as namespace preact;
 
 import { JSXInternal } from './jsx';
+import { DOMAttributes, HTMLAttributes, SVGAttributes } from './dom';
 
 export import JSX = JSXInternal;
+export * from './dom';
 
 //
 // Preact Virtual DOM
@@ -37,9 +39,9 @@ export interface VNode<P = {}> {
 
 export type Key = string | number | any;
 
-export type RefObject<T> = { current: T | null };
-export type RefCallback<T> = (instance: T | null) => void;
-export type Ref<T> = RefObject<T> | RefCallback<T> | null;
+export type RefObject<T> = { current: T };
+export type RefCallback<T> = (instance: T | null) => void | (() => void);
+export type Ref<T> = RefCallback<T> | RefObject<T | null> | null;
 
 export type ComponentChild =
 	| VNode<any>
@@ -64,7 +66,7 @@ export interface ClassAttributes<T> extends Attributes {
 export interface PreactDOMAttributes {
 	children?: ComponentChildren;
 	dangerouslySetInnerHTML?: {
-		__html: string;
+		__html: Parameters<DOMParser['parseFromString']>[0];
 	};
 }
 
@@ -83,20 +85,18 @@ export type ComponentProps<
 > = C extends ComponentType<infer P>
 	? P
 	: C extends keyof JSXInternal.IntrinsicElements
-	? JSXInternal.IntrinsicElements[C]
-	: never;
+		? JSXInternal.IntrinsicElements[C]
+		: {};
 
 export interface FunctionComponent<P = {}> {
-	(props: RenderableProps<P>, context?: any): VNode<any> | null;
+	(props: RenderableProps<P>, context?: any): ComponentChildren;
 	displayName?: string;
-	defaultProps?: Partial<P> | undefined;
 }
 export interface FunctionalComponent<P = {}> extends FunctionComponent<P> {}
 
 export interface ComponentClass<P = {}, S = {}> {
 	new (props: P, context?: any): Component<P, S>;
 	displayName?: string;
-	defaultProps?: Partial<P>;
 	contextType?: Context<any>;
 	getDerivedStateFromProps?(
 		props: Readonly<P>,
@@ -110,8 +110,9 @@ export interface ComponentConstructor<P = {}, S = {}>
 // Type alias for a component instance considered generally, whether stateless or stateful.
 export type AnyComponent<P = {}, S = {}> =
 	| FunctionComponent<P>
-	| Component<P, S>;
+	| ComponentConstructor<P, S>;
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface Component<P = {}, S = {}> {
 	componentWillMount?(): void;
 	componentDidMount?(): void;
@@ -141,7 +142,6 @@ export abstract class Component<P, S> {
 	constructor(props?: P, context?: any);
 
 	static displayName?: string;
-	static defaultProps?: any;
 	static contextType?: Context<any>;
 
 	// Static members cannot reference class type parameters. This is not
@@ -159,7 +159,6 @@ export abstract class Component<P, S> {
 	state: Readonly<S>;
 	props: RenderableProps<P>;
 	context: any;
-	base?: Element | Text;
 
 	// From https://github.com/DefinitelyTyped/DefinitelyTyped/blob/e836acc75a78cf0655b5dfdbe81d69fdd4d8a252/types/react/index.d.ts#L402
 	// // We MUST keep setState() as a unified signature because it allows proper checking of the method return type.
@@ -180,7 +179,7 @@ export abstract class Component<P, S> {
 		props?: RenderableProps<P>,
 		state?: Readonly<S>,
 		context?: any
-	): ComponentChild;
+	): ComponentChildren;
 }
 
 //
@@ -190,44 +189,43 @@ export abstract class Component<P, S> {
 export function createElement(
 	type: 'input',
 	props:
-		| (JSXInternal.DOMAttributes<HTMLInputElement> &
+		| (DOMAttributes<HTMLInputElement> &
 				ClassAttributes<HTMLInputElement>)
 		| null,
 	...children: ComponentChildren[]
 ): VNode<
-	| (JSXInternal.DOMAttributes<HTMLInputElement> &
-			ClassAttributes<HTMLInputElement>)
-	| null
+	DOMAttributes<HTMLInputElement> &
+		ClassAttributes<HTMLInputElement>
 >;
 export function createElement<
-	P extends JSXInternal.HTMLAttributes<T>,
+	P extends HTMLAttributes<T>,
 	T extends HTMLElement
 >(
 	type: keyof JSXInternal.IntrinsicElements,
 	props: (ClassAttributes<T> & P) | null,
 	...children: ComponentChildren[]
-): VNode<(ClassAttributes<T> & P) | null>;
+): VNode<ClassAttributes<T> & P>;
 export function createElement<
-	P extends JSXInternal.SVGAttributes<T>,
+	P extends SVGAttributes<T>,
 	T extends HTMLElement
 >(
-	type: keyof JSXInternal.IntrinsicElements,
+	type: keyof JSXInternal.IntrinsicSVGElements,
 	props: (ClassAttributes<T> & P) | null,
 	...children: ComponentChildren[]
-): VNode<(ClassAttributes<T> & P) | null>;
+): VNode<ClassAttributes<T> & P>;
 export function createElement<T extends HTMLElement>(
 	type: string,
 	props:
 		| (ClassAttributes<T> &
-				JSXInternal.HTMLAttributes &
-				JSXInternal.SVGAttributes)
+				HTMLAttributes &
+				SVGAttributes)
 		| null,
 	...children: ComponentChildren[]
 ): VNode<
-	ClassAttributes<T> & JSXInternal.HTMLAttributes & JSXInternal.SVGAttributes
+	ClassAttributes<T> & HTMLAttributes & SVGAttributes
 >;
 export function createElement<P>(
-	type: ComponentType<P>,
+	type: ComponentType<P> | string,
 	props: (Attributes & P) | null,
 	...children: ComponentChildren[]
 ): VNode<P>;
@@ -238,50 +236,49 @@ export namespace createElement {
 export function h(
 	type: 'input',
 	props:
-		| (JSXInternal.DOMAttributes<HTMLInputElement> &
+		| (DOMAttributes<HTMLInputElement> &
 				ClassAttributes<HTMLInputElement>)
 		| null,
 	...children: ComponentChildren[]
 ): VNode<
-	| (JSXInternal.DOMAttributes<HTMLInputElement> &
-			ClassAttributes<HTMLInputElement>)
-	| null
+	DOMAttributes<HTMLInputElement> &
+		ClassAttributes<HTMLInputElement>
 >;
 export function h<
-	P extends JSXInternal.HTMLAttributes<T>,
+	P extends HTMLAttributes<T>,
 	T extends HTMLElement
 >(
 	type: keyof JSXInternal.IntrinsicElements,
 	props: (ClassAttributes<T> & P) | null,
 	...children: ComponentChildren[]
-): VNode<(ClassAttributes<T> & P) | null>;
+): VNode<ClassAttributes<T> & P>;
 export function h<
-	P extends JSXInternal.SVGAttributes<T>,
+	P extends SVGAttributes<T>,
 	T extends HTMLElement
 >(
-	type: keyof JSXInternal.IntrinsicElements,
+	type: keyof JSXInternal.IntrinsicSVGElements,
 	props: (ClassAttributes<T> & P) | null,
 	...children: ComponentChildren[]
-): VNode<(ClassAttributes<T> & P) | null>;
+): VNode<ClassAttributes<T> & P>;
 export function h<T extends HTMLElement>(
 	type: string,
 	props:
 		| (ClassAttributes<T> &
-				JSXInternal.HTMLAttributes &
-				JSXInternal.SVGAttributes)
+				HTMLAttributes &
+				SVGAttributes)
 		| null,
 	...children: ComponentChildren[]
 ): VNode<
 	| (ClassAttributes<T> &
-			JSXInternal.HTMLAttributes &
-			JSXInternal.SVGAttributes)
+			HTMLAttributes &
+			SVGAttributes)
 	| null
 >;
 export function h<P>(
-	type: ComponentType<P>,
+	type: ComponentType<P> | string,
 	props: (Attributes & P) | null,
 	...children: ComponentChildren[]
-): VNode<(Attributes & P) | null>;
+): VNode<Attributes & P>;
 export namespace h {
 	export import JSX = JSXInternal;
 }
@@ -289,28 +286,18 @@ export namespace h {
 //
 // Preact render
 // -----------------------------------
+export interface ContainerNode {
+	readonly nodeType: number;
+	readonly parentNode: ContainerNode | null;
+	readonly firstChild: ContainerNode | null;
+	readonly childNodes: ArrayLike<ContainerNode>;
 
-interface ContainerNode {
-	nodeType: Node['nodeType'];
-	parentNode: Node['parentNode'];
-	firstChild: Node['firstChild'];
-	insertBefore: Node['insertBefore'];
-	appendChild: Node['appendChild'];
-	removeChild: Node['removeChild'];
-	childNodes: ArrayLike<Node>;
+	insertBefore(node: ContainerNode, child: ContainerNode | null): ContainerNode;
+	appendChild(node: ContainerNode): ContainerNode;
+	removeChild(child: ContainerNode): ContainerNode;
 }
 
 export function render(vnode: ComponentChild, parent: ContainerNode): void;
-/**
- * @deprecated Will be removed in v11.
- *
- * Replacement Preact 10+ implementation can be found here: https://gist.github.com/developit/f4c67a2ede71dc2fab7f357f39cff28c
- */
-export function render(
-	vnode: ComponentChild,
-	parent: ContainerNode,
-	replaceNode?: Element | Text
-): void;
 export function hydrate(vnode: ComponentChild, parent: ContainerNode): void;
 export function cloneElement(
 	vnode: VNode<any>,
@@ -351,6 +338,12 @@ export interface Options {
 	_addHookName?(name: string | number): void;
 	__suspenseDidResolve?(vnode: VNode, cb: () => void): void;
 	// __canSuspenseResolve?(vnode: VNode, cb: () => void): void;
+
+	/**
+	 * Customize attribute serialization when a precompiled JSX transform
+	 * is used.
+	 */
+	attr?(name: string, value: any): string | void;
 }
 
 export const options: Options;
@@ -376,18 +369,19 @@ export interface PreactConsumer<T> extends Consumer<T> {}
 export interface Provider<T>
 	extends FunctionComponent<{
 		value: T;
-		children: ComponentChildren;
+		children?: ComponentChildren;
 	}> {}
 export interface PreactProvider<T> extends Provider<T> {}
 export type ContextType<C extends Context<any>> = C extends Context<infer T>
 	? T
 	: never;
 
-export interface Context<T> {
-	Consumer: Consumer<T>;
-	Provider: Provider<T>;
+export interface Context<T> extends preact.Provider<T> {
+	Consumer: preact.Consumer<T>;
+	Provider: preact.Provider<T>;
 	displayName?: string;
 }
+
 export interface PreactContext<T> extends Context<T> {}
 
 export function createContext<T>(defaultValue: T): Context<T>;

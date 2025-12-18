@@ -27,7 +27,7 @@ const componentPromise = new Promise<{ default: typeof IsLazyFunctional }>(
 const IsLazyFunc = React.lazy(() => componentPromise);
 
 // Suspense using lazy component
-class SuspensefulFunc extends React.Component {
+class ReactSuspensefulFunc extends React.Component {
 	render() {
 		return (
 			<React.Suspense fallback={<FallBack />}>
@@ -37,16 +37,17 @@ class SuspensefulFunc extends React.Component {
 	}
 }
 
-//SuspenseList using lazy components
-function SuspenseListTester(props: any) {
-	return (
-		<React.SuspenseList revealOrder="together">
-			<React.Suspense fallback={<FallBack />}>
-				<IsLazyFunc isProp={false} />
-			</React.Suspense>
-			<React.Suspense fallback={<FallBack />}>
-				<IsLazyFunc isProp={false} />
-			</React.Suspense>
-		</React.SuspenseList>
-	);
+const Comp = () => <p>Hello world</p>;
+
+const importComponent = async () => {
+	return { MyComponent: Comp };
+};
+
+const Lazy = React.lazy(() =>
+	importComponent().then(mod => ({ default: mod.MyComponent }))
+);
+
+// eslint-disable-next-line
+function App() {
+	return <Lazy />;
 }

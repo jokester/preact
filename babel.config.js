@@ -24,15 +24,19 @@ module.exports = function (api) {
 					modules: noModules ? false : 'auto',
 					exclude: ['@babel/plugin-transform-typeof-symbol'],
 					targets: {
-						browsers: ['last 2 versions', 'IE >= 9']
+						browsers: [
+							'chrome >= 40',
+							'safari >= 9',
+							'firefox >= 36',
+							'edge >= 12',
+							'not dead'
+						]
 					}
 				}
 			]
 		],
 		plugins: [
-			'@babel/plugin-proposal-object-rest-spread',
 			'@babel/plugin-transform-react-jsx',
-			'babel-plugin-transform-async-to-promises',
 			['babel-plugin-transform-rename-properties', { rename }]
 		],
 		include: ['**/src/**/*.js', '**/test/**/*.js'],

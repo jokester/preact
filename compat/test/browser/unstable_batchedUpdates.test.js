@@ -1,15 +1,8 @@
 import { unstable_batchedUpdates } from 'preact/compat';
 
 describe('unstable_batchedUpdates', () => {
-	it('should call the callback', () => {
-		const spy = sinon.spy();
-		unstable_batchedUpdates(spy);
-		expect(spy).to.be.calledOnce;
-	});
-
-	it('should call callback with only one arg', () => {
-		const spy = sinon.spy();
-		unstable_batchedUpdates(spy, 'foo', 'bar');
-		expect(spy).to.be.calledWithExactly('foo');
+	it('should execute & return cb', () => {
+		expect(unstable_batchedUpdates(() => false)).to.equal(false);
+		expect(unstable_batchedUpdates(arg => arg, true)).to.equal(true);
 	});
 });

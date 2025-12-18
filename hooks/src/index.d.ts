@@ -1,21 +1,27 @@
-import { ErrorInfo, PreactContext, Ref as PreactRef } from '../..';
+// Intentionally not using a relative path to take advantage of
+// the TS version resolution mechanism
+import { ErrorInfo, PreactContext, Ref, RefObject } from 'preact';
 
 type Inputs = ReadonlyArray<unknown>;
 
-export type StateUpdater<S> = (value: S | ((prevState: S) => S)) => void;
+export type Dispatch<A> = (value: A) => void;
+export type StateUpdater<S> = S | ((prevState: S) => S);
+
 /**
  * Returns a stateful value, and a function to update it.
  * @param initialState The initial value (or a function that returns the initial value)
  */
-export function useState<S>(initialState: S | (() => S)): [S, StateUpdater<S>];
+export function useState<S>(
+	initialState: S | (() => S)
+): [S, Dispatch<StateUpdater<S>>];
 
 export function useState<S = undefined>(): [
 	S | undefined,
-	StateUpdater<S | undefined>
+	Dispatch<StateUpdater<S | undefined>>
 ];
 
 export type Reducer<S, A> = (prevState: S, action: A) => S;
-export type Dispatch<A> = (action: A) => void;
+
 /**
  * An alternative to `useState`.
  *
@@ -46,16 +52,6 @@ export function useReducer<S, A, I>(
 	init: (arg: I) => S
 ): [S, Dispatch<A>];
 
-/** @deprecated Use the `Ref` type instead. */
-type PropRef<T> = MutableRef<T>;
-interface Ref<T> {
-	readonly current: T | null;
-}
-
-interface MutableRef<T> {
-	current: T;
-}
-
 /**
  * `useRef` returns a mutable ref object whose `.current` property is initialized to the passed argument
  * (`initialValue`). The returned object will persist for the full lifetime of the component.
@@ -65,9 +61,11 @@ interface MutableRef<T> {
  *
  * @param initialValue the initial value to store in the ref object
  */
-export function useRef<T>(initialValue: T): MutableRef<T>;
-export function useRef<T>(initialValue: T | null): Ref<T>;
-export function useRef<T = undefined>(): MutableRef<T | undefined>;
+export function useRef<T>(initialValue: T): RefObject<T>;
+export function useRef<T>(initialValue: T | null): RefObject<T | null>;
+export function useRef<T>(
+	initialValue: T | undefined
+): RefObject<T | undefined>;
 
 type EffectCallback = () => void | (() => void);
 /**
@@ -88,7 +86,7 @@ type CreateHandle = () => object;
  * @param inputs If present, effect will only activate if the values in the list change (using ===).
  */
 export function useImperativeHandle<T, R extends T>(
-	ref: PreactRef<T>,
+	ref: Ref<T>,
 	create: () => R,
 	inputs?: Inputs
 ): void;

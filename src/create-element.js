@@ -1,14 +1,16 @@
 import { slice } from './util';
 import options from './options';
+import { NULL, UNDEFINED } from './constants';
 
 let vnodeId = 0;
 
 /**
  * Create an virtual node (used for JSX)
- * @param {import('./internal').VNode["type"]} type The node name or Component
- * constructor for this virtual node
+ * @param {import('./internal').VNode["type"]} type The node name or Component constructor for this
+ * virtual node
  * @param {object | null | undefined} [props] The properties of the virtual node
- * @param {Array<import('.').ComponentChildren>} [children] The children of the virtual node
+ * @param {Array<import('.').ComponentChildren>} [children] The children of the
+ * virtual node
  * @returns {import('./internal').VNode}
  */
 export function createElement(type, props, children) {
@@ -18,7 +20,7 @@ export function createElement(type, props, children) {
 		i;
 	for (i in props) {
 		if (i == 'key') key = props[i];
-		else if (i == 'ref') ref = props[i];
+		else if (i == 'ref' && typeof type != 'function') ref = props[i];
 		else normalizedProps[i] = props[i];
 	}
 
@@ -27,17 +29,7 @@ export function createElement(type, props, children) {
 			arguments.length > 3 ? slice.call(arguments, 2) : children;
 	}
 
-	// If a Component VNode, check for and apply defaultProps
-	// Note: type may be undefined in development, must never error here.
-	if (typeof type == 'function' && type.defaultProps != null) {
-		for (i in type.defaultProps) {
-			if (normalizedProps[i] === undefined) {
-				normalizedProps[i] = type.defaultProps[i];
-			}
-		}
-	}
-
-	return createVNode(type, normalizedProps, key, ref, null);
+	return createVNode(type, normalizedProps, key, ref, NULL);
 }
 
 /**
@@ -55,34 +47,31 @@ export function createElement(type, props, children) {
 export function createVNode(type, props, key, ref, original) {
 	// V8 seems to be better at detecting type shapes if the object is allocated from the same call site
 	// Do not inline into createElement and coerceToVNode!
+	/** @type {import('./internal').VNode} */
 	const vnode = {
 		type,
 		props,
 		key,
 		ref,
-		_children: null,
-		_parent: null,
+		_children: NULL,
+		_parent: NULL,
 		_depth: 0,
-		_dom: null,
-		// _nextDom must be initialized to undefined b/c it will eventually
-		// be set to dom.nextSibling which can return `null` and it is important
-		// to be able to distinguish between an uninitialized _nextDom and
-		// a _nextDom that has been set to `null`
-		_nextDom: undefined,
-		_component: null,
-		_hydrating: null,
-		constructor: undefined,
-		_original: original == null ? ++vnodeId : original
+		_dom: NULL,
+		_component: NULL,
+		constructor: UNDEFINED,
+		_original: original == NULL ? ++vnodeId : original,
+		_index: -1,
+		_flags: 0
 	};
 
 	// Only invoke the vnode hook if this was *not* a direct copy:
-	if (original == null && options.vnode != null) options.vnode(vnode);
+	if (original == NULL && options.vnode != NULL) options.vnode(vnode);
 
 	return vnode;
 }
 
 export function createRef() {
-	return { current: null };
+	return { current: NULL };
 }
 
 export function Fragment(props) {
@@ -92,7 +81,7 @@ export function Fragment(props) {
 /**
  * Check if a the argument is a valid Preact VNode.
  * @param {*} vnode
- * @returns {vnode is import('./internal').VNode}
+ * @returns {vnode is VNode}
  */
 export const isValidElement = vnode =>
-	vnode != null && vnode.constructor === undefined;
+	vnode != NULL && vnode.constructor == UNDEFINED;

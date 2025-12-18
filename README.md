@@ -1,3 +1,6 @@
+> [!NOTE]
+> This is the branch for the upcoming release, for patches to v10 you need the [v10.x branch](https://github.com/preactjs/preact/tree/v10.x)
+
 <p align="center">
 <a href="https://preactjs.com" target="_blank">
 
@@ -5,7 +8,7 @@
 
 </a>
 </p>
-<p align="center">Fast <b>3kB</b> alternative to React with the same modern API.</p>
+<p align="center">Fast <b>4kB</b> alternative to React with the same modern API.</p>
 
 **All the power of Virtual DOM components, without the overhead:**
 
@@ -13,7 +16,7 @@
 - Extensive React compatibility via a simple [preact/compat] alias
 - Everything you need: JSX, <abbr title="Virtual DOM">VDOM</abbr>, [DevTools], <abbr title="Hot Module Replacement">HMR</abbr>, <abbr title="Server-Side Rendering">SSR</abbr>.
 - Highly optimized diff algorithm and seamless hydration from Server Side Rendering
-- Supports all modern browsers and IE11
+- Supports all modern browsers
 - Transparent asynchronous rendering with a pluggable scheduler
 
 ### 💁 More information at the [Preact Website ➞](https://preactjs.com)
@@ -23,19 +26,14 @@
 <tr>
 <td>
 
-[![npm](https://img.shields.io/npm/v/preact.svg)](http://npm.im/preact)
+[![npm](https://img.shields.io/npm/v/preact.svg)](https://www.npmjs.com/package/preact)
 [![Preact Slack Community](https://img.shields.io/badge/Slack%20Community-preact.slack.com-blue)](https://chat.preactjs.com)
 [![OpenCollective Backers](https://opencollective.com/preact/backers/badge.svg)](#backers)
 [![OpenCollective Sponsors](https://opencollective.com/preact/sponsors/badge.svg)](#sponsors)
 
-[![coveralls](https://img.shields.io/coveralls/preactjs/preact/master.svg)](https://coveralls.io/github/preactjs/preact)
-[![gzip size](http://img.badgesize.io/https://unpkg.com/preact/dist/preact.min.js?compression=gzip&label=gzip)](https://unpkg.com/preact/dist/preact.min.js)
-[![brotli size](http://img.badgesize.io/https://unpkg.com/preact/dist/preact.min.js?compression=brotli&label=brotli)](https://unpkg.com/preact/dist/preact.min.js)
-
-</td>
-<td>
-
-<img src="https://saucelabs.com/browser-matrix/preact.svg" title="Browser support matrix">
+[![coveralls](https://img.shields.io/coveralls/preactjs/preact/main.svg)](https://coveralls.io/github/preactjs/preact)
+[![gzip size](https://img.badgesize.io/https://unpkg.com/preact/dist/preact.min.js?compression=gzip&label=gzip)](https://unpkg.com/preact/dist/preact.min.js)
+[![brotli size](https://img.badgesize.io/https://unpkg.com/preact/dist/preact.min.js?compression=brotli&label=brotli)](https://unpkg.com/preact/dist/preact.min.js)
 
 </td>
 </tr>
@@ -185,6 +183,6 @@ MIT
 
 [![Preact](https://i.imgur.com/YqCHvEW.gif)](https://preactjs.com)
 
-[preact/compat]: https://github.com/preactjs/preact/tree/master/compat
+[preact/compat]: https://github.com/preactjs/preact/tree/main/compat
 [hyperscript]: https://github.com/dominictarr/hyperscript
 [DevTools]: https://github.com/preactjs/preact-devtools

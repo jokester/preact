@@ -1,4 +1,6 @@
-import * as preact from './index';
+// Intentionally not using a relative path to take advantage of
+// the TS version resolution mechanism
+import * as preact from 'preact';
 
 export enum HookType {
 	useState = 1,
@@ -26,10 +28,7 @@ export interface ErrorInfo {
 
 export interface Options extends preact.Options {
 	/** Attach a hook that is invoked before render, mainly to check the arguments. */
-	_root?(
-		vnode: ComponentChild,
-		parent: Element | Document | ShadowRoot | DocumentFragment
-	): void;
+	_root?(vnode: ComponentChild, parent: preact.ContainerNode): void;
 	/** Attach a hook that is invoked before a vnode is diffed. */
 	_diff?(vnode: VNode): void;
 	/** Attach a hook that is invoked after a tree was mounted or was updated. */
@@ -44,8 +43,13 @@ export interface Options extends preact.Options {
 	_catchError(
 		error: any,
 		vnode: VNode,
-		oldVNode: VNode | undefined,
-		errorInfo: ErrorInfo | undefined
+		oldVNode?: VNode | undefined,
+		errorInfo?: ErrorInfo | undefined
+	): void;
+	/** Attach a hook that fires when hydration can't find a proper DOM-node to match with */
+	_hydrationMismatch?(
+		vnode: VNode,
+		excessDomChildren: Array<PreactElement | null>
 	): void;
 }
 
@@ -83,27 +87,61 @@ export interface ComponentClass<P = {}> extends preact.ComponentClass<P> {
 // Redefine ComponentType using our new internal FunctionComponent interface above
 export type ComponentType<P = {}> = ComponentClass<P> | FunctionComponent<P>;
 
-export interface PreactElement extends HTMLElement {
+export interface PreactElement extends preact.ContainerNode {
+	// Namespace detection
+	readonly namespaceURI?: string;
+	// Property used to update Text nodes
+	data?: CharacterData['data'];
+	// Property to set __dangerouslySetInnerHTML
+	innerHTML?: Element['innerHTML'];
+	remove?: Element['remove'];
+
+	// Attribute reading and setting
+	readonly attributes?: Element['attributes'];
+	setAttribute?: Element['setAttribute'];
+	removeAttribute?: Element['removeAttribute'];
+
+	// Event listeners
+	addEventListener?: Element['addEventListener'];
+	removeEventListener?: Element['removeEventListener'];
+
+	// Used to match DOM nodes to VNodes during hydration
+	readonly ownerDocument: Document;
+
+	// Setting styles
+	readonly style?: CSSStyleDeclaration;
+
+	// nextSibling required for inserting nodes
+	readonly nextSibling: PreactElement | null;
+
+	// Used to match DOM nodes to VNodes during hydration. Note: doesn't exist
+	// on Text nodes
+	readonly localName?: string;
+
+	// Input handling
+	value?: HTMLInputElement['value'];
+	checked?: HTMLInputElement['checked'];
+
+	// Internal properties
 	_children?: VNode<any> | null;
 	/** Event listeners to support event delegation */
 	_listeners?: Record<string, (e: Event) => void>;
+}
 
-	// Preact uses this attribute to detect SVG nodes
-	ownerSVGElement?: SVGElement | null;
-
-	// style: HTMLElement["style"]; // From HTMLElement
-
-	data?: string | number; // From Text node
+export interface PreactEvent extends Event {
+	_dispatched?: number;
 }
 
 // We use the `current` property to differentiate between the two kinds of Refs so
 // internally we'll define `current` on both to make TypeScript happy
 type RefObject<T> = { current: T | null };
-type RefCallback<T> = { (instance: T | null): void; current: undefined };
-type Ref<T> = RefObject<T> | RefCallback<T>;
+type RefCallback<T> = {
+	(instance: T | null): void | (() => void);
+	current: undefined;
+};
+export type Ref<T> = RefObject<T> | RefCallback<T>;
 
 export interface VNode<P = {}> extends preact.VNode<P> {
-	// Redefine type here using our internal ComponentType type
 	type: string | ComponentType<P>;
 	props: P & { children: ComponentChildren };
 	ref?: Ref<any> | null;
@@ -114,24 +152,20 @@ export interface VNode<P = {}> extends preact.VNode<P> {
 	 * The [first (for Fragments)] DOM child of a VNode
 	 */
 	_dom: PreactElement | null;
-	/**
-	 * The last dom child of a Fragment, or components that return a Fragment
-	 */
-	_nextDom: PreactElement | null;
 	_component: Component | null;
-	_hydrating: boolean | null;
 	constructor: undefined;
 	_original: number;
+	_index: number;
+	_flags: number;
 }
 
-export interface Component<P = {}, S = {}> extends preact.Component<P, S> {
+export interface Component<P = {}, S = {}>
+	extends Omit<preact.Component<P, S>, 'base'> {
 	// When component is functional component, this is reset to functional component
 	constructor: ComponentType<P>;
 	state: S; // Override Component["state"] to not be readonly for internal use, specifically Hooks
-	base?: PreactElement;
 
-	_dirty: boolean;
-	_force?: boolean;
+	_excess?: PreactElement[];
 	_renderCallbacks: Array<() => void>; // Only class components
 	_stateCallbacks: Array<() => void>; // Only class components
 	_globalContext?: any;
@@ -144,10 +178,7 @@ export interface Component<P = {}, S = {}> extends preact.Component<P, S> {
 	 * components or array returns.
 	 */
 	_parentDom?: PreactElement | null;
-	// Always read, set only when handling error
-	_processingException?: Component<any, any> | null;
-	// Always read, set only when handling error. This is used to indicate at diffTime to set _processingException
-	_pendingError?: Component<any, any> | null;
+	_bits: number;
 }
 
 export interface PreactContext extends preact.Context<any> {
